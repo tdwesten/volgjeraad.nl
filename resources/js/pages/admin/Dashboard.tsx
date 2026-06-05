@@ -1,5 +1,6 @@
 import AdminLayout from '@/layouts/AdminLayout';
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
+import { useState } from 'react';
 
 interface Props {
     totalCostCents: number;
@@ -9,10 +10,34 @@ interface Props {
 }
 
 export default function Dashboard({ totalCostCents, totalAiCalls, newslettersSent, drafts }: Props): JSX.Element {
+    const [searching, setSearching] = useState(false);
+
+    function searchMeetings(): void {
+        setSearching(true);
+        router.post(
+            '/admin/ingest',
+            {},
+            {
+                preserveScroll: true,
+                onFinish: () => setSearching(false),
+            },
+        );
+    }
+
     return (
         <AdminLayout>
             <div className="space-y-8">
-                <h1 className="text-2xl font-bold">Dashboard</h1>
+                <div className="flex items-center justify-between gap-4">
+                    <h1 className="text-2xl font-bold">Dashboard</h1>
+                    <button
+                        type="button"
+                        onClick={searchMeetings}
+                        disabled={searching}
+                        className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
+                    >
+                        {searching ? 'Bezig met zoeken…' : 'Zoek naar nieuwe vergaderingen'}
+                    </button>
+                </div>
 
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                     <StatCard label="AI-calls" value={totalAiCalls.toLocaleString('nl-NL')} />

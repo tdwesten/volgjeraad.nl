@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Route;
 // Item 13 — admin
 Route::middleware(['auth', 'is_admin'])->prefix('admin')->name('admin.')->group(function (): void {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::post('/ingest', [DashboardController::class, 'ingest'])->name('ingest');
     Route::get('/review', [ReviewController::class, 'index'])->name('review.index');
     Route::get('/review/{meeting}', [ReviewController::class, 'show'])->name('review.show');
     Route::patch('/summary/{summary}', [ReviewController::class, 'update'])->name('review.update');
