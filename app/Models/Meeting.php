@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\IngestMode;
 use App\Enums\MeetingType;
+use App\Enums\VideoStatus;
 use Database\Factories\MeetingFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -52,6 +53,41 @@ class Meeting extends Model
     public function summaries(): MorphMany
     {
         return $this->morphMany(Summary::class, 'summarizable');
+    }
+
+    /** @return HasOne<MeetingVideo, $this> */
+    public function video(): HasOne
+    {
+        return $this->hasOne(MeetingVideo::class);
+    }
+
+    /**
+     * Is de transcript-resolutie klaar? Dat is zo wanneer er geen transcript wordt
+     * verwacht (niet-raad), het transcript binnen is (Transcribed), het definitief is
+     * opgegeven (Failed op de attempt-limiet), of de wachttijd is verstreken. De
+     * lifecycle-gate (DispatchMeetingSummariesIfReady) leunt hierop.
+     */
+    public function transcriptResolved(): bool
+    {
+        if ($this->type !== MeetingType::Council) {
+            return true;
+        }
+
+        $video = $this->video;
+
+        if ($video?->status === VideoStatus::Transcribed) {
+            return true;
+        }
+
+        if ($video?->status === VideoStatus::Failed
+            && $video->transcript_attempts >= (int) config('volgjeraad.youtube.max_transcript_attempts')) {
+            return true;
+        }
+
+        $waitDays = (int) config('volgjeraad.youtube.transcript_wait_days');
+
+        return $this->starts_at !== null
+            && now()->greaterThanOrEqualTo($this->starts_at->copy()->addDays($waitDays));
     }
 
     /** @return HasOne<Newsletter, $this> */

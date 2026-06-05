@@ -2,9 +2,9 @@
 
 namespace App\Actions\Ingest;
 
+use App\Actions\Summaries\DispatchMeetingSummariesIfReady;
 use App\Enums\SummaryLevel;
 use App\Jobs\SummarizeAgendaItemJob;
-use App\Jobs\SummarizeMeetingJob;
 use App\Models\AgendaItem;
 use App\Models\MediaObject;
 use App\Services\Ori\OriClient;
@@ -13,7 +13,10 @@ use App\Support\PayloadHasher;
 
 class IngestAgendaMediaObjects
 {
-    public function __construct(private OriClient $client) {}
+    public function __construct(
+        private OriClient $client,
+        private DispatchMeetingSummariesIfReady $dispatchMeetingSummaries,
+    ) {}
 
     public function handle(AgendaItem $item): void
     {
@@ -71,14 +74,14 @@ class IngestAgendaMediaObjects
             return;
         }
 
+        // Agendapunt-samenvattingen (PDF) draaien meteen — niet afhankelijk van transcript.
         foreach ($meeting->agendaItems as $agendaItem) {
             foreach (SummaryLevel::cases() as $level) {
                 dispatch(new SummarizeAgendaItemJob($agendaItem->id, $level));
             }
         }
 
-        foreach (SummaryLevel::cases() as $level) {
-            dispatch(new SummarizeMeetingJob($meeting->id, $level));
-        }
+        // Meeting-samenvatting wacht op transcript-resolutie (wachten vóór review).
+        $this->dispatchMeetingSummaries->handle($meeting);
     }
 }

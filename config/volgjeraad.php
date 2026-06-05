@@ -18,6 +18,41 @@ return [
         'confidence_highlight_threshold' => 60,
         // Max chars of source text passed to the AI (≈6000 tokens at 4 chars/token)
         'max_source_chars' => 24000,
+        // Apart tekenbudget voor het transcript-blok zodat het transcript nooit
+        // volledig wegvalt achter een lange agenda/PDF-bron (≈15000 tokens).
+        'max_transcript_chars' => 60000,
+    ],
+
+    'youtube' => [
+        'api_key' => env('YOUTUBE_API_KEY'),
+        'base_url' => env('YOUTUBE_BASE_URL', 'https://www.googleapis.com/youtube/v3'),
+        'timeout' => 20,
+        'connect_timeout' => 5,
+        // Zoekvenster rond meeting->starts_at (dagen vóór en ná).
+        'search_window_days' => 3,
+        // Minimale agent-confidence (0-100) om automatisch te koppelen.
+        'match_confidence_threshold' => 75,
+        // Stop met zoeken voor meetings ouder dan N dagen (geldt op NotFound/geen-video).
+        'max_find_days' => 14,
+        // Maximaal aantal transcript-fetch-pogingen per video voordat we opgeven.
+        'max_transcript_attempts' => 4,
+        // Hoe lang we met de vergadering-samenvatting wachten op een transcript voordat
+        // we 'm zonder transcript maken (apart van max_find_days). 'Wachten vóór review'.
+        'transcript_wait_days' => 7,
+    ],
+
+    'transcript' => [
+        'supadata' => [
+            'api_key' => env('SUPADATA_API_KEY'),
+            'base_url' => env('SUPADATA_BASE_URL', 'https://api.supadata.ai/v1'),
+            // Universal-endpoint mode: native|auto|generate. 'auto' = captions, val terug op AI.
+            'mode' => env('SUPADATA_MODE', 'auto'),
+            'timeout' => 60,
+            'connect_timeout' => 5,
+            // Async (202 + jobId) job-polling.
+            'poll_max_attempts' => 10,
+            'poll_interval_ms' => 2000,
+        ],
     ],
 
     'launch_date' => env('VOLGJERAAD_LAUNCH_DATE'),

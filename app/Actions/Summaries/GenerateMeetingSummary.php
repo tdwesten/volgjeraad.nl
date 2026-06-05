@@ -5,6 +5,7 @@ namespace App\Actions\Summaries;
 use App\Ai\Agents\MeetingSummaryAgent;
 use App\Enums\SummaryLevel;
 use App\Enums\SummaryStatus;
+use App\Enums\VideoStatus;
 use App\Models\Meeting;
 use App\Models\Summary;
 use App\Support\PayloadHasher;
@@ -38,16 +39,23 @@ class GenerateMeetingSummary
         $promptVersion = PromptRepository::version();
         $costCapCents = (int) config('volgjeraad.ai.cost_cap_cents_per_meeting');
         $maxSourceChars = (int) config('volgjeraad.ai.max_source_chars', 24000);
+        $maxTranscriptChars = (int) config('volgjeraad.ai.max_transcript_chars', 60000);
 
         // Concat raw agenda texts in position order
-        $sourceText = $meeting->agendaItems()
+        $agendaText = $meeting->agendaItems()
             ->orderBy('position')
             ->get()
             ->map(fn ($item) => $item->sourceText())
             ->filter(fn ($text) => $text !== '')
             ->implode("\n\n---\n\n");
 
-        if ($sourceText === '') {
+        // Collect transcript text when the video is fully transcribed
+        $video = $meeting->video;
+        $transcriptText = ($video?->status === VideoStatus::Transcribed && $video->transcript_text !== null)
+            ? $video->transcript_text
+            : '';
+
+        if ($agendaText === '' && $transcriptText === '') {
             return Summary::create([
                 'summarizable_type' => $meeting->getMorphClass(),
                 'summarizable_id' => $meeting->getKey(),
@@ -69,12 +77,21 @@ class GenerateMeetingSummary
             ]);
         }
 
-        // Truncate concatenated source text to stay within safe token budget
+        // Truncate each source block to its own budget
         $truncated = false;
-        if (mb_strlen($sourceText) > $maxSourceChars) {
-            $sourceText = mb_substr($sourceText, 0, $maxSourceChars);
+        if (mb_strlen($agendaText) > $maxSourceChars) {
+            $agendaText = mb_substr($agendaText, 0, $maxSourceChars);
             $truncated = true;
         }
+        if ($transcriptText !== '' && mb_strlen($transcriptText) > $maxTranscriptChars) {
+            $transcriptText = mb_substr($transcriptText, 0, $maxTranscriptChars);
+            $truncated = true;
+        }
+
+        // Combine into the full source text sent to the agent (and used for the hash)
+        $sourceText = $transcriptText !== ''
+            ? "=== BESLUITENLIJST + AGENDA ===\n\n{$agendaText}\n\n=== TRANSCRIPT (debat) ===\n\n{$transcriptText}"
+            : $agendaText;
 
         $currentCost = $this->checkMeetingCost->handle($meeting, $model);
         if ($currentCost >= $costCapCents) {

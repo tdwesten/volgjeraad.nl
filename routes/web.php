@@ -4,6 +4,7 @@
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Controllers\Admin\SubscriberController;
+use App\Http\Controllers\Admin\VideoReviewController;
 use App\Http\Controllers\Public\LandingController;
 use App\Http\Controllers\Public\MeetingController;
 use App\Http\Controllers\Public\MunicipalityController;
@@ -21,6 +22,8 @@ Route::middleware(['auth', 'is_admin'])->prefix('admin')->name('admin.')->group(
     Route::get('/subscribers/export', [SubscriberController::class, 'export'])->name('subscribers.export');
     Route::get('/subscribers', [SubscriberController::class, 'index'])->name('subscribers.index');
     Route::delete('/subscribers/{subscriber}', [SubscriberController::class, 'destroy'])->name('subscribers.destroy');
+    Route::get('/videos', [VideoReviewController::class, 'index'])->name('videos.index');
+    Route::post('/videos/{video}/confirm', [VideoReviewController::class, 'confirm'])->name('videos.confirm');
 });
 
 Route::get('/', LandingController::class)->name('home');
