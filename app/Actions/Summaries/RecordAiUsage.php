@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class RecordAiUsage
 {
+    /**
+     * @param  array<string, mixed>|null  $rawMetadata
+     */
     public function handle(
         Model $subject,
         Municipality $municipality,
@@ -21,6 +24,7 @@ class RecordAiUsage
         int $outputTokens,
         int $costCents,
         string $status,
+        ?array $rawMetadata = null,
     ): AiUsageRecord {
         return AiUsageRecord::create([
             'municipality_id' => $municipality->id,
@@ -35,7 +39,7 @@ class RecordAiUsage
             'output_tokens' => $outputTokens,
             'cost_cents' => $costCents,
             'status' => $status,
-            'raw_metadata' => null,
+            'raw_metadata' => $rawMetadata,
         ]);
     }
 }

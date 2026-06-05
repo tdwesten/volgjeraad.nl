@@ -18,6 +18,10 @@ class IngestOriCommand extends Command
 
     public function handle(IngestMeetings $action): int
     {
+        if ($this->option('sync')) {
+            config(['queue.default' => 'sync']);
+        }
+
         $slug = $this->argument('municipality');
         $municipality = Municipality::where('slug', $slug)->firstOrFail();
 

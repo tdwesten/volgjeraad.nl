@@ -85,6 +85,11 @@ class OriNormalizer
             return [$refs];
         }
 
+        // JSON-LD @list wrapper: {"@list": ["id1", "id2"]}
+        if (isset($refs['@list'])) {
+            return self::ids($refs['@list']);
+        }
+
         $result = [];
         foreach ($refs as $ref) {
             if (is_string($ref)) {

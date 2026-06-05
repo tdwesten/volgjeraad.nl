@@ -2,6 +2,7 @@
 
 namespace App\Actions\Ingest;
 
+use App\Enums\IngestMode;
 use App\Enums\MeetingType;
 use App\Jobs\IngestMeetingAgendaJob;
 use App\Models\Meeting;
@@ -15,7 +16,6 @@ class IngestMeetings
 {
     public function __construct(
         private OriClient $client,
-        private DetermineIngestMode $determineIngestMode,
     ) {}
 
     public function handle(Municipality $m): void
@@ -43,6 +43,10 @@ class IngestMeetings
             }
         }
 
+        // Pass 1: upsert all meetings with MetadataOnly; track which changed
+        $ingestedOriIds = [];
+        $changedOriIds = [];
+
         foreach ($hits as $hit) {
             $oriId = $hit['_id'];
             $source = $hit['_source'] ?? [];
@@ -61,7 +65,7 @@ class IngestMeetings
                 ? CarbonImmutable::parse($source['start_date'])
                 : null;
 
-            $ingestMode = $this->determineIngestMode->handle($m, $startsAt, $type);
+            $ingestedOriIds[] = $oriId;
 
             $existing = Meeting::where('municipality_id', $m->id)
                 ->where('ori_id', $oriId)
@@ -73,7 +77,9 @@ class IngestMeetings
                 continue;
             }
 
-            $meeting = Meeting::updateOrCreate(
+            $changedOriIds[] = $oriId;
+
+            Meeting::updateOrCreate(
                 ['municipality_id' => $m->id, 'ori_id' => $oriId],
                 [
                     'type' => $type->value,
@@ -85,14 +91,68 @@ class IngestMeetings
                     'source_url' => $normalized['source_url'],
                     'raw_payload' => $source,
                     'raw_payload_hash' => $hash,
-                    'ingest_mode' => $ingestMode->value,
+                    'ingest_mode' => IngestMode::MetadataOnly->value,
                     'last_seen_at' => now(),
                 ],
             );
+        }
 
-            if ($meeting->shouldSummarize()) {
-                dispatch(new IngestMeetingAgendaJob($meeting->id));
-            }
+        // Pass 2: determine summarizable council meetings with full DB context
+        $launchDate = $m->launch_date ? CarbonImmutable::instance($m->launch_date) : null;
+
+        if ($launchDate === null || empty($ingestedOriIds)) {
+            return;
+        }
+
+        $summarizableOriIds = [];
+
+        // Council meetings on or after launch date (within ingested set)
+        $afterLaunchIds = Meeting::where('municipality_id', $m->id)
+            ->where('type', MeetingType::Council->value)
+            ->whereIn('ori_id', $ingestedOriIds)
+            ->where('starts_at', '>=', $launchDate)
+            ->pluck('ori_id')
+            ->all();
+
+        $summarizableOriIds = array_merge($summarizableOriIds, $afterLaunchIds);
+
+        // Top-N most recent council meetings before launch date (global backfill)
+        $backfillCount = (int) $m->backfill_recent_meetings;
+        if ($backfillCount > 0) {
+            $backfillIds = Meeting::where('municipality_id', $m->id)
+                ->where('type', MeetingType::Council->value)
+                ->where('starts_at', '<', $launchDate)
+                ->orderByDesc('starts_at')
+                ->limit($backfillCount)
+                ->pluck('ori_id')
+                ->all();
+
+            $summarizableOriIds = array_merge($summarizableOriIds, $backfillIds);
+        }
+
+        $summarizableOriIds = array_unique($summarizableOriIds);
+
+        if (empty($summarizableOriIds)) {
+            return;
+        }
+
+        // Update ingest_mode to Summarize for the entire summarizable set
+        Meeting::where('municipality_id', $m->id)
+            ->whereIn('ori_id', $summarizableOriIds)
+            ->update(['ingest_mode' => IngestMode::Summarize->value]);
+
+        // Dispatch agenda job for meetings that still need agenda ingest.
+        // A hash-skip in pass 1 must not block this when agenda_ingested_at is null.
+        $toDispatch = Meeting::where('municipality_id', $m->id)
+            ->whereIn('ori_id', $summarizableOriIds)
+            ->where(function ($query) use ($changedOriIds): void {
+                $query->whereNull('agenda_ingested_at')
+                    ->orWhereIn('ori_id', $changedOriIds);
+            })
+            ->get();
+
+        foreach ($toDispatch as $meeting) {
+            dispatch(new IngestMeetingAgendaJob($meeting->id));
         }
     }
 }

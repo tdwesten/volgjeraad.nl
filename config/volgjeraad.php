@@ -16,6 +16,8 @@ return [
         'prompt_version' => 'v1',
         'cost_cap_cents_per_meeting' => 100,
         'confidence_highlight_threshold' => 60,
+        // Max chars of source text passed to the AI (≈6000 tokens at 4 chars/token)
+        'max_source_chars' => 24000,
     ],
 
     'launch_date' => env('VOLGJERAAD_LAUNCH_DATE'),
