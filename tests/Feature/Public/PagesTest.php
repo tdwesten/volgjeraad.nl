@@ -1,10 +1,12 @@
 <?php
 
 use App\Enums\SummaryStatus;
+use App\Enums\VideoStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 use App\Models\Meeting;
+use App\Models\MeetingVideo;
 use App\Models\Municipality;
 use App\Models\Newsletter;
 use App\Models\Summary;
@@ -136,6 +138,57 @@ test('newsletter web page renders', function (): void {
         ->assertInertia(fn (Assert $page) => $page
             ->component('Newsletter/Web')
             ->where('newsletter.id', $newsletter->id)
+        );
+});
+
+test('meeting show page includes video prop when matched video present', function (): void {
+    $municipality = Municipality::factory()->create();
+    $meeting = Meeting::factory()->summarizable()->create(['municipality_id' => $municipality->id]);
+    MeetingVideo::factory()->create([
+        'meeting_id' => $meeting->id,
+        'status' => VideoStatus::Matched->value,
+        'youtube_video_id' => 'dQw4w9WgXcQ',
+        'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    ]);
+
+    $this->withoutVite()
+        ->get("/{$municipality->slug}/vergadering/{$meeting->id}")
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Meeting/Show')
+            ->where('video.youtube_video_id', 'dQw4w9WgXcQ')
+            ->where('video.video_url', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+        );
+});
+
+test('meeting show page video prop is null without matching video', function (): void {
+    $municipality = Municipality::factory()->create();
+    $meeting = Meeting::factory()->summarizable()->create(['municipality_id' => $municipality->id]);
+
+    $this->withoutVite()
+        ->get("/{$municipality->slug}/vergadering/{$meeting->id}")
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Meeting/Show')
+            ->where('video', null)
+        );
+});
+
+test('meeting show page video prop is null for pending video', function (): void {
+    $municipality = Municipality::factory()->create();
+    $meeting = Meeting::factory()->summarizable()->create(['municipality_id' => $municipality->id]);
+    MeetingVideo::factory()->create([
+        'meeting_id' => $meeting->id,
+        'status' => VideoStatus::Pending->value,
+        'youtube_video_id' => 'dQw4w9WgXcQ',
+    ]);
+
+    $this->withoutVite()
+        ->get("/{$municipality->slug}/vergadering/{$meeting->id}")
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Meeting/Show')
+            ->where('video', null)
         );
 });
 

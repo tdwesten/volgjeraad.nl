@@ -2,12 +2,13 @@ import { Toaster } from '@/components/ui/sonner';
 import { Link, usePage } from '@inertiajs/react';
 import { type PropsWithChildren } from 'react';
 import { type PageProps } from '@/types';
+import { Building2, ClipboardList, LayoutDashboard, Users } from 'lucide-react';
 
 const navLinks = [
-    { href: '/admin', label: 'Dashboard' },
-    { href: '/admin/review', label: 'Review' },
-    { href: '/admin/subscribers', label: 'Abonnees' },
-    { href: '/admin/municipalities', label: 'Gemeenten' },
+    { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/admin/review', label: 'Review', icon: ClipboardList },
+    { href: '/admin/subscribers', label: 'Abonnees', icon: Users },
+    { href: '/admin/municipalities', label: 'Gemeenten', icon: Building2 },
 ];
 
 export default function AdminLayout({ children }: PropsWithChildren): JSX.Element {
@@ -25,12 +26,13 @@ export default function AdminLayout({ children }: PropsWithChildren): JSX.Elemen
                                 <Link
                                     key={link.href}
                                     href={link.href}
-                                    className={`rounded-md px-3 py-1.5 text-sm transition-colors hover:bg-accent ${
+                                    className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors hover:bg-accent ${
                                         currentPath === link.href
                                             ? 'font-medium text-foreground'
                                             : 'text-muted-foreground'
                                     }`}
                                 >
+                                    <link.icon className="h-4 w-4" />
                                     {link.label}
                                 </Link>
                             ))}

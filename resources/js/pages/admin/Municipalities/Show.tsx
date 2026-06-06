@@ -2,6 +2,7 @@ import AdminLayout from '@/layouts/AdminLayout';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Link } from '@inertiajs/react';
+import { AlertTriangle, CheckCircle2, Clock, FileText } from 'lucide-react';
 
 interface MunicipalityData {
     id: number;
@@ -35,33 +36,42 @@ const meetingTypeLabel: Record<MeetingItem['type'], string> = {
 function SummaryStatusBadge({ status }: { status: string }): JSX.Element {
     if (status === 'Gepubliceerd') {
         return (
-            <Badge variant="outline" className="border-green-400 text-green-700">
+            <Badge variant="outline" className="gap-1 border-green-400 text-green-700">
+                <CheckCircle2 className="h-3.5 w-3.5" />
                 {status}
             </Badge>
         );
     }
     if (status === 'Goedgekeurd') {
         return (
-            <Badge variant="outline" className="border-blue-400 text-blue-700">
+            <Badge variant="outline" className="gap-1 border-blue-400 text-blue-700">
+                <CheckCircle2 className="h-3.5 w-3.5" />
                 {status}
             </Badge>
         );
     }
     if (status === 'Concept') {
         return (
-            <Badge variant="outline" className="border-yellow-400 text-yellow-700">
+            <Badge variant="outline" className="gap-1 border-yellow-400 text-yellow-700">
+                <FileText className="h-3.5 w-3.5" />
                 {status}
             </Badge>
         );
     }
     if (status === 'Wacht op verwerking') {
         return (
-            <Badge variant="outline" className="border-orange-400 text-orange-700">
+            <Badge variant="outline" className="gap-1 border-orange-400 text-orange-700">
+                <Clock className="h-3.5 w-3.5" />
                 {status}
             </Badge>
         );
     }
-    return <span className="text-sm text-muted-foreground">{status}</span>;
+    return (
+        <span className="flex items-center gap-1 text-sm text-muted-foreground">
+            <AlertTriangle className="h-3.5 w-3.5" />
+            {status}
+        </span>
+    );
 }
 
 export default function MunicipalitiesShow({ municipality, meetings }: Props): JSX.Element {
@@ -79,7 +89,10 @@ export default function MunicipalitiesShow({ municipality, meetings }: Props): J
                 </div>
 
                 {meetings.length === 0 ? (
-                    <p className="text-muted-foreground">Geen vergaderingen gevonden.</p>
+                    <p className="flex items-center gap-2 text-muted-foreground">
+                        <AlertTriangle className="h-4 w-4" />
+                        Geen vergaderingen gevonden.
+                    </p>
                 ) : (
                     <Table>
                         <TableHeader>

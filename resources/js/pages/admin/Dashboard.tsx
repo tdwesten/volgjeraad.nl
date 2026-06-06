@@ -1,5 +1,6 @@
 import AdminLayout from '@/layouts/AdminLayout';
 import { Link, router } from '@inertiajs/react';
+import { Search } from 'lucide-react';
 import { useState } from 'react';
 
 interface Props {
@@ -33,8 +34,9 @@ export default function Dashboard({ totalCostCents, totalAiCalls, newslettersSen
                         type="button"
                         onClick={searchMeetings}
                         disabled={searching}
-                        className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
+                        className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
                     >
+                        <Search className="h-4 w-4" />
                         {searching ? 'Bezig met zoeken…' : 'Zoek naar nieuwe vergaderingen'}
                     </button>
                 </div>

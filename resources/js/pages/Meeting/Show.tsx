@@ -2,6 +2,7 @@ import PublicLayout from '@/layouts/PublicLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import SummaryCard from '@/components/SummaryCard';
 import { Link } from '@inertiajs/react';
+import { Clock } from 'lucide-react';
 
 interface SummaryData {
     id: number;
@@ -37,17 +38,23 @@ interface Municipality {
     name: string;
 }
 
+interface VideoData {
+    youtube_video_id: string;
+    video_url: string | null;
+}
+
 interface Props {
     municipality: Municipality;
     meeting: Meeting;
     agendaItems: AgendaItem[];
+    video: VideoData | null;
 }
 
 function SummaryWithCard({ summary, label }: { summary: SummaryData; label: string }): JSX.Element {
     return <SummaryCard label={label} title={summary.title} body={summary.body} />;
 }
 
-export default function MeetingShow({ municipality, meeting, agendaItems }: Props): JSX.Element {
+export default function MeetingShow({ municipality, meeting, agendaItems, video }: Props): JSX.Element {
     const hasStandard = meeting.standard_summary !== null;
     const hasSimple = meeting.simple_summary !== null;
     const hasSummaries = hasStandard || hasSimple;
@@ -87,6 +94,30 @@ export default function MeetingShow({ municipality, meeting, agendaItems }: Prop
                     )}
                 </div>
 
+                {video && (
+                    <div className="space-y-2">
+                        <div className="aspect-video w-full overflow-hidden rounded-lg border border-border">
+                            <iframe
+                                src={`https://www.youtube.com/embed/${video.youtube_video_id}`}
+                                title="Uitzending vergadering"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                                className="h-full w-full"
+                            />
+                        </div>
+                        {video.video_url && (
+                            <a
+                                href={video.video_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm text-primary hover:underline"
+                            >
+                                Bekijk de uitzending op YouTube
+                            </a>
+                        )}
+                    </div>
+                )}
+
                 {hasSummaries ? (
                     <div className="space-y-4">
                         <div className="flex items-start gap-2 rounded-md border border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
@@ -110,7 +141,10 @@ export default function MeetingShow({ municipality, meeting, agendaItems }: Prop
                         </Tabs>
                     </div>
                 ) : (
-                    <p className="text-muted-foreground">Nog geen samenvatting beschikbaar voor deze vergadering.</p>
+                    <p className="flex items-center gap-2 text-muted-foreground">
+                        <Clock className="h-4 w-4" />
+                        Nog geen samenvatting beschikbaar voor deze vergadering.
+                    </p>
                 )}
 
                 {sourceLinks.length > 0 && (

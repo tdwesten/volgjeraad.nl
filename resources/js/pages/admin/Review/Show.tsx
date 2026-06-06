@@ -5,6 +5,7 @@ import SummaryCard from '@/components/SummaryCard';
 import { Link, useForm, router, usePage } from '@inertiajs/react';
 import { type PageProps } from '@/types';
 import { useState } from 'react';
+import { AlertTriangle, CheckCircle2, Clock, RefreshCw, Send, XCircle } from 'lucide-react';
 
 interface SummaryItem {
     id: number;
@@ -40,6 +41,7 @@ interface Props {
     standardSummary: SummaryItem | null;
     simpleSummary: SummaryItem | null;
     logs: ProcessingLogItem[];
+    video_url: string | null;
 }
 
 function EditableSummaryCard({
@@ -101,23 +103,28 @@ const statusStyles: Record<string, string> = {
     error: 'border-red-200 bg-red-50 text-red-700',
 };
 
-const statusDotColors: Record<string, string> = {
-    info: 'bg-blue-400',
-    success: 'bg-green-500',
-    warning: 'bg-yellow-400',
-    error: 'bg-red-500',
+const statusIcons: Record<string, JSX.Element> = {
+    info: <Clock className="h-3.5 w-3.5 shrink-0 opacity-70" />,
+    success: <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-green-500" />,
+    warning: <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-yellow-500" />,
+    error: <XCircle className="h-3.5 w-3.5 shrink-0 text-red-500" />,
 };
 
 function ProcessingTimeline({ logs }: { logs: ProcessingLogItem[] }): JSX.Element {
     if (logs.length === 0) {
-        return <p className="text-sm text-muted-foreground">Geen verwerkingslogboek beschikbaar.</p>;
+        return (
+            <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Clock className="h-4 w-4" />
+                Geen verwerkingslogboek beschikbaar.
+            </p>
+        );
     }
 
     return (
         <ol className="space-y-2">
             {logs.map((log) => (
-                <li key={log.id} className={`flex gap-3 rounded-md border px-3 py-2 text-sm ${statusStyles[log.status] ?? statusStyles.info}`}>
-                    <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${statusDotColors[log.status] ?? statusDotColors.info}`} />
+                <li key={log.id} className={`flex items-start gap-3 rounded-md border px-3 py-2 text-sm ${statusStyles[log.status] ?? statusStyles.info}`}>
+                    <span className="mt-0.5">{statusIcons[log.status] ?? statusIcons.info}</span>
                     <div className="min-w-0 flex-1">
                         <span className="font-mono text-xs opacity-60">[{log.step}]</span>{' '}
                         <span>{log.message}</span>
@@ -131,7 +138,7 @@ function ProcessingTimeline({ logs }: { logs: ProcessingLogItem[] }): JSX.Elemen
     );
 }
 
-export default function ReviewShow({ meeting, newsletter, standardSummary, simpleSummary, logs }: Props): JSX.Element {
+export default function ReviewShow({ meeting, newsletter, standardSummary, simpleSummary, logs, video_url }: Props): JSX.Element {
     const { flash } = usePage<PageProps>().props;
     const { post: postRegenerate, processing: regenerating } = useForm({});
 
@@ -171,11 +178,23 @@ export default function ReviewShow({ meeting, newsletter, standardSummary, simpl
                         )}
                     </div>
                     <div className="flex gap-2">
+                        {video_url && (
+                            <a
+                                href={video_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
+                            >
+                                Bekijk de uitzending
+                            </a>
+                        )}
                         <Button variant="outline" onClick={handleRegenerate} disabled={regenerating}>
+                            <RefreshCw className="h-4 w-4" />
                             {regenerating ? 'Bezig...' : 'Opnieuw verwerken'}
                         </Button>
                         {newsletter && (
                             <Button onClick={approve} disabled={newsletter.status !== 'draft'}>
+                                <Send className="h-4 w-4" />
                                 {newsletter.status === 'draft' ? 'Goedkeuren & versturen' : 'Verstuurd'}
                             </Button>
                         )}

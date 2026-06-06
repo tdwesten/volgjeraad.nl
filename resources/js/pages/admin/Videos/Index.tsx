@@ -1,5 +1,6 @@
 import AdminLayout from '@/layouts/AdminLayout';
 import { router } from '@inertiajs/react';
+import { Check } from 'lucide-react';
 
 interface Candidate {
     videoId: string;
@@ -34,7 +35,12 @@ export default function Index({ videos }: Props): JSX.Element {
             <div className="space-y-8">
                 <h1 className="text-2xl font-bold">Video's bevestigen</h1>
 
-                {videos.length === 0 && <p className="text-sm text-muted-foreground">Niets te bevestigen.</p>}
+                {videos.length === 0 && (
+                    <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Check className="h-4 w-4" />
+                        Niets te bevestigen.
+                    </p>
+                )}
 
                 <ul className="space-y-6">
                     {videos.map((video) => (
@@ -54,8 +60,9 @@ export default function Index({ videos }: Props): JSX.Element {
                                         <button
                                             type="button"
                                             onClick={() => confirm(video.id, candidate.videoId)}
-                                            className="rounded-md bg-primary px-3 py-1 text-sm text-primary-foreground hover:opacity-90"
+                                            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1 text-sm text-primary-foreground hover:opacity-90"
                                         >
+                                            <Check className="h-4 w-4" />
                                             Bevestig
                                         </button>
                                     </li>

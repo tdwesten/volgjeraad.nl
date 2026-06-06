@@ -2,6 +2,7 @@ import '../css/app.css';
 
 import { createInertiaApp } from '@inertiajs/react';
 import { hydrateRoot } from 'react-dom/client';
+import 'virtual:instruckt';
 
 createInertiaApp({
     title: (title) => (title ? `${title} - Volgjeraad` : 'Volgjeraad'),

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Actions\Meetings\RegenerateMeeting;
 use App\Actions\Newsletters\PublishMeetingSummaries;
 use App\Enums\NewsletterStatus;
+use App\Enums\VideoStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Meeting;
 use App\Models\Newsletter;
@@ -47,7 +48,7 @@ class ReviewController extends Controller
 
     public function show(Meeting $meeting): Response
     {
-        $meeting->load(['municipality', 'newsletter.summaries']);
+        $meeting->load(['municipality', 'newsletter.summaries', 'video']);
 
         $newsletter = $meeting->newsletter;
 
@@ -74,6 +75,13 @@ class ReviewController extends Controller
             ])
             ->all();
 
+        $video = $meeting->video;
+        $videoUrl = ($video
+            && in_array($video->status, [VideoStatus::Matched, VideoStatus::Transcribed], true)
+            && $video->video_url !== null)
+            ? $video->video_url
+            : null;
+
         return Inertia::render('admin/Review/Show', [
             'meeting' => [
                 'id' => $meeting->id,
@@ -81,6 +89,7 @@ class ReviewController extends Controller
                 'starts_at' => $meeting->starts_at?->toIso8601String(),
                 'municipality' => $meeting->municipality->only('id', 'name', 'slug'),
             ],
+            'video_url' => $videoUrl,
             'newsletter' => $newsletter ? [
                 'id' => $newsletter->id,
                 'subject' => $newsletter->subject,
