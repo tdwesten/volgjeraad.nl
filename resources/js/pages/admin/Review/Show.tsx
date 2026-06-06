@@ -1,11 +1,10 @@
 import AdminLayout from '@/layouts/AdminLayout';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import SummaryCard from '@/components/SummaryCard';
 import { Link, useForm, router, usePage } from '@inertiajs/react';
 import { type PageProps } from '@/types';
 import { useState } from 'react';
-import ReactMarkdown from 'react-markdown';
 
 interface SummaryItem {
     id: number;
@@ -43,7 +42,7 @@ interface Props {
     logs: ProcessingLogItem[];
 }
 
-function SummaryCard({
+function EditableSummaryCard({
     summary,
     label,
 }: {
@@ -52,7 +51,6 @@ function SummaryCard({
 }): JSX.Element {
     const [editing, setEditing] = useState(false);
     const { data, setData, patch, processing } = useForm({ body: summary.body });
-    const isLowConfidence = summary.confidence !== null && summary.confidence < 60;
 
     const save = (): void => {
         patch(`/admin/summary/${summary.id}`, {
@@ -60,23 +58,13 @@ function SummaryCard({
         });
     };
 
-    return (
-        <div className={`rounded-lg border p-4 ${isLowConfidence ? 'border-yellow-300' : 'border-border'}`}>
-            <div className="mb-2 flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</span>
-                {summary.confidence !== null && (
-                    <Badge
-                        variant="outline"
-                        className={isLowConfidence ? 'border-yellow-400 text-yellow-700' : ''}
-                    >
-                        {summary.confidence}% betrouwbaar
-                    </Badge>
-                )}
-            </div>
-
-            <h3 className="mb-2 font-medium">{summary.title}</h3>
-
-            {editing ? (
+    if (editing) {
+        return (
+            <div className="rounded-lg border border-border p-4">
+                <div className="mb-2">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</span>
+                </div>
+                <h3 className="mb-2 font-medium">{summary.title}</h3>
                 <div className="space-y-2">
                     <Textarea
                         value={data.body}
@@ -93,17 +81,16 @@ function SummaryCard({
                         </Button>
                     </div>
                 </div>
-            ) : (
-                <div className="space-y-2">
-                    <div className="prose prose-sm max-w-none text-foreground">
-                    <ReactMarkdown>{data.body}</ReactMarkdown>
-                </div>
-                    <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
-                        Bewerken
-                    </Button>
-                </div>
-            )}
-        </div>
+            </div>
+        );
+    }
+
+    return (
+        <SummaryCard label={label} title={summary.title} body={data.body} confidence={summary.confidence}>
+            <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
+                Bewerken
+            </Button>
+        </SummaryCard>
     );
 }
 
@@ -204,14 +191,14 @@ export default function ReviewShow({ meeting, newsletter, standardSummary, simpl
                 {hasSummaries ? (
                     <div className="grid gap-4 md:grid-cols-2">
                         {standardSummary ? (
-                            <SummaryCard summary={standardSummary} label="Standaard" />
+                            <EditableSummaryCard summary={standardSummary} label="Standaard" />
                         ) : (
                             <div className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
                                 Geen standaard samenvatting
                             </div>
                         )}
                         {simpleSummary ? (
-                            <SummaryCard summary={simpleSummary} label="Eenvoudig (B1)" />
+                            <EditableSummaryCard summary={simpleSummary} label="Eenvoudig (B1)" />
                         ) : (
                             <div className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
                                 Geen B1-samenvatting

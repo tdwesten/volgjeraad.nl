@@ -10,7 +10,7 @@ Schrijf een verslag van de vergadering op basis van UITSLUITEND de aangeleverde 
 
 2. **Per onderwerp een blok** (alleen de echt besproken/besloten punten):
    - Een kop met `##` en een korte, gewone naam. Zet er waar nodig een status bij, bv. `## Geheime stukken school — *hamerstuk*`.
-   - Daaronder, alléén als de bron dat zegt, een regel in bold: `**Vraag van:** {fractie}` of `**Initiatiefnemers:** {…}` of `**Inspreker:** {naam/rol}`. Laat weg wat niet in de bron staat — nooit gokken.
+   - Daaronder, alléén als de bron dat zegt, een regel in bold: `**Vraag van:** {fractie}` of `**Initiatiefnemers:** {…}` of `**Inspreker:** {naam/rol}`. Zet UITSLUITEND het label vet (bijv. `**Vraag van:**`), niet de waarde erachter; gebruik geen losse of dubbele `**` aan het einde van een regel. Laat weg wat niet in de bron staat — nooit gokken.
    - Dan 2-4 korte zinnen: wat werd gevraagd of voorgesteld, wat zei het college (noem de wethouder als de bron dat geeft), en wat is de uitkomst (besluit, hamerstuk, "er komt volgende week een motie", "wordt later apart besproken").
    - Leg een moeilijk woord de éérste keer kort uit, *cursief*, bv. *een motie = een voorstel/oproep van de raad aan het college*, *een grondexploitatie = het financiële plan achter een bouwproject*.
 

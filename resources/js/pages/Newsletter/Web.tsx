@@ -53,7 +53,7 @@ export default function NewsletterWeb({ newsletter }: Props): JSX.Element {
                         {standardSummaries.map((summary) => (
                             <div key={summary.id} className="space-y-3">
                                 <h2 className="text-lg font-semibold">{summary.title}</h2>
-                                <div className="prose prose-sm max-w-none text-foreground">
+                                <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:font-semibold prose-h2:text-base prose-h2:mt-5 prose-h2:mb-1 prose-p:my-2">
                                     <ReactMarkdown>{summary.body}</ReactMarkdown>
                                 </div>
                             </div>

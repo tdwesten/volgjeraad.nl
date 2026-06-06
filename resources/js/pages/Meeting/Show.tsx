@@ -1,7 +1,7 @@
 import PublicLayout from '@/layouts/PublicLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import SummaryCard from '@/components/SummaryCard';
 import { Link } from '@inertiajs/react';
-import ReactMarkdown from 'react-markdown';
 
 interface SummaryData {
     id: number;
@@ -43,18 +43,8 @@ interface Props {
     agendaItems: AgendaItem[];
 }
 
-function SummaryBody({ summary }: { summary: SummaryData }): JSX.Element {
-    return (
-        <div className="space-y-4">
-            <h2 className="text-xl font-semibold">{summary.title}</h2>
-            <div className="prose prose-sm max-w-none text-foreground">
-                <ReactMarkdown>{summary.body}</ReactMarkdown>
-            </div>
-            <p className="text-xs text-muted-foreground italic">
-                Automatisch samengevat door AI. Controleer altijd de bronnen voor officiële informatie.
-            </p>
-        </div>
-    );
+function SummaryWithCard({ summary, label }: { summary: SummaryData; label: string }): JSX.Element {
+    return <SummaryCard label={label} title={summary.title} body={summary.body} />;
 }
 
 export default function MeetingShow({ municipality, meeting, agendaItems }: Props): JSX.Element {
@@ -98,22 +88,27 @@ export default function MeetingShow({ municipality, meeting, agendaItems }: Prop
                 </div>
 
                 {hasSummaries ? (
-                    <Tabs defaultValue={defaultTab}>
-                        <TabsList>
-                            {hasStandard && <TabsTrigger value="standard">Standaard</TabsTrigger>}
-                            {hasSimple && <TabsTrigger value="simple">Eenvoudig (B1)</TabsTrigger>}
-                        </TabsList>
-                        {hasStandard && (
-                            <TabsContent value="standard" className="mt-4">
-                                <SummaryBody summary={meeting.standard_summary!} />
-                            </TabsContent>
-                        )}
-                        {hasSimple && (
-                            <TabsContent value="simple" className="mt-4">
-                                <SummaryBody summary={meeting.simple_summary!} />
-                            </TabsContent>
-                        )}
-                    </Tabs>
+                    <div className="space-y-4">
+                        <div className="flex items-start gap-2 rounded-md border border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+                            <span>Automatisch samengevat door AI. Controleer altijd de bronnen voor officiële informatie.</span>
+                        </div>
+                        <Tabs defaultValue={defaultTab}>
+                            <TabsList>
+                                {hasStandard && <TabsTrigger value="standard">Standaard</TabsTrigger>}
+                                {hasSimple && <TabsTrigger value="simple">Eenvoudig (B1)</TabsTrigger>}
+                            </TabsList>
+                            {hasStandard && (
+                                <TabsContent value="standard" className="mt-4">
+                                    <SummaryWithCard summary={meeting.standard_summary!} label="Standaard" />
+                                </TabsContent>
+                            )}
+                            {hasSimple && (
+                                <TabsContent value="simple" className="mt-4">
+                                    <SummaryWithCard summary={meeting.simple_summary!} label="Eenvoudig (B1)" />
+                                </TabsContent>
+                            )}
+                        </Tabs>
+                    </div>
                 ) : (
                     <p className="text-muted-foreground">Nog geen samenvatting beschikbaar voor deze vergadering.</p>
                 )}

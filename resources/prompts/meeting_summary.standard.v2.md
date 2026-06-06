@@ -10,7 +10,7 @@ Schrijf een verslag van de vergadering op basis van UITSLUITEND de aangeleverde 
 
 2. **Per onderwerp een blok** (alleen de inhoudelijk besproken/besloten punten; sla puur procedurele formaliteiten over):
    - Een kop met `##` en een korte, begrijpelijke onderwerpsnaam (geen ambtelijke titel). Zet er waar van toepassing een statusmarkering bij, bv. `## Geheimhouding grondexploitatie — *hamerstuk*`.
-   - Direct daaronder, alléén als de bron dat ondersteunt, een attributieregel in bold: `**Vraag van:** {fractie}`, of `**Initiatiefnemers:** {…}`, of `**Inspreker:** {naam/rol}`. Laat weg wat niet in de bron staat — nooit gokken welke fractie/persoon iets zei.
+   - Direct daaronder, alléén als de bron dat ondersteunt, een attributieregel in bold: `**Vraag van:** {fractie}`, of `**Initiatiefnemers:** {…}`, of `**Inspreker:** {naam/rol}`. Zet UITSLUITEND het label vet (bijv. `**Vraag van:**`), niet de waarde erachter; gebruik geen losse of dubbele `**` aan het einde van een regel. Laat weg wat niet in de bron staat — nooit gokken welke fractie/persoon iets zei.
    - Vervolgens 2-5 zinnen: wat werd er gevraagd of voorgesteld, wat antwoordde het college (noem de wethouder als de bron dat geeft), en wat is de uitkomst of het vervolg (besluit, hamerstuk, "motie volgt volgende week", "wordt apart geagendeerd", schriftelijke beantwoording, enz.).
    - Leg vakjargon de éérste keer dat het voorkomt kort uit, *cursief*, bv. *een motie = een formele oproep/opdracht van de raad aan het college*, *een grondexploitatie = de financiële opzet achter een bouwproject*, *een zienswijze = een officiële reactie van een belanghebbende*.
 
