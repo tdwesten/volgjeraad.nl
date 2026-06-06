@@ -1,4 +1,5 @@
 import PublicLayout from '@/layouts/PublicLayout';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Link } from '@inertiajs/react';
 
 interface Meeting {
@@ -38,32 +39,40 @@ export default function MunicipalityArchive({ municipality, meetings }: Props): 
                     <p className="text-sm text-muted-foreground">Alle vergaderingen van de gemeenteraad.</p>
                 </div>
 
-                {meetings.length > 0 ? (
-                    <ul className="divide-y divide-border">
-                        {meetings.map((meeting) => (
-                            <li key={meeting.id} className="flex items-center justify-between py-3">
-                                <div>
-                                    <Link
-                                        href={`/${municipality.slug}/vergadering/${meeting.id}`}
-                                        className="font-medium hover:underline"
-                                    >
-                                        {meeting.name ?? 'Vergadering'}
-                                    </Link>
-                                    {meeting.starts_at && (
-                                        <p className="text-sm text-muted-foreground">
-                                            {new Date(meeting.starts_at).toLocaleDateString('nl-NL', {
-                                                day: 'numeric',
-                                                month: 'long',
-                                                year: 'numeric',
-                                            })}
-                                        </p>
-                                    )}
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
-                ) : (
+                {meetings.length === 0 ? (
                     <p className="text-muted-foreground">Geen vergaderingen gevonden.</p>
+                ) : (
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Vergadering</TableHead>
+                                <TableHead>Datum</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {meetings.map((meeting) => (
+                                <TableRow key={meeting.id}>
+                                    <TableCell>
+                                        <Link
+                                            href={`/${municipality.slug}/vergadering/${meeting.id}`}
+                                            className="font-medium hover:underline"
+                                        >
+                                            {meeting.name ?? 'Vergadering'}
+                                        </Link>
+                                    </TableCell>
+                                    <TableCell className="text-sm text-muted-foreground">
+                                        {meeting.starts_at
+                                            ? new Date(meeting.starts_at).toLocaleDateString('nl-NL', {
+                                                  day: 'numeric',
+                                                  month: 'long',
+                                                  year: 'numeric',
+                                              })
+                                            : '—'}
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
                 )}
             </div>
         </PublicLayout>

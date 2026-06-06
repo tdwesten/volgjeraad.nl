@@ -1,4 +1,6 @@
 import AdminLayout from '@/layouts/AdminLayout';
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { router } from '@inertiajs/react';
 import { Check } from 'lucide-react';
 
@@ -30,47 +32,63 @@ export default function Index({ videos }: Props): JSX.Element {
         router.post(`/admin/videos/${videoRowId}/confirm`, { video_id: videoId });
     }
 
+    const rows = videos.flatMap((video) =>
+        video.candidates.map((candidate) => ({ video, candidate })),
+    );
+
     return (
         <AdminLayout>
-            <div className="space-y-8">
+            <div className="space-y-6">
                 <h1 className="text-2xl font-bold">Video's bevestigen</h1>
 
-                {videos.length === 0 && (
+                {videos.length === 0 ? (
                     <p className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Check className="h-4 w-4" />
                         Niets te bevestigen.
                     </p>
-                )}
-
-                <ul className="space-y-6">
-                    {videos.map((video) => (
-                        <li key={video.id} className="rounded-lg border border-border p-4">
-                            <p className="font-semibold">{video.meeting?.name ?? 'Onbekende vergadering'}</p>
-                            <p className="text-xs text-muted-foreground">
-                                {video.meeting?.municipality.name} · confidence {video.match_confidence ?? '—'}
-                            </p>
-                            {video.match_reason && <p className="mt-1 text-sm">{video.match_reason}</p>}
-
-                            <ul className="mt-3 space-y-2">
-                                {video.candidates.map((candidate) => (
-                                    <li key={candidate.videoId} className="flex items-center justify-between gap-4">
-                                        <span className="text-sm">
-                                            {candidate.title} ({candidate.publishedAt})
-                                        </span>
-                                        <button
-                                            type="button"
+                ) : (
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Vergadering</TableHead>
+                                <TableHead>Gemeente</TableHead>
+                                <TableHead>Confidence</TableHead>
+                                <TableHead>Video</TableHead>
+                                <TableHead>Gepubliceerd</TableHead>
+                                <TableHead></TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {rows.map(({ video, candidate }) => (
+                                <TableRow key={`${video.id}-${candidate.videoId}`}>
+                                    <TableCell className="font-medium">
+                                        {video.meeting?.name ?? 'Onbekende vergadering'}
+                                    </TableCell>
+                                    <TableCell>{video.meeting?.municipality.name ?? '—'}</TableCell>
+                                    <TableCell className="text-sm text-muted-foreground">
+                                        {video.match_confidence ?? '—'}
+                                        {video.match_reason && (
+                                            <span className="block text-xs">{video.match_reason}</span>
+                                        )}
+                                    </TableCell>
+                                    <TableCell className="text-sm">{candidate.title}</TableCell>
+                                    <TableCell className="text-sm text-muted-foreground">
+                                        {candidate.publishedAt}
+                                    </TableCell>
+                                    <TableCell>
+                                        <Button
+                                            size="sm"
                                             onClick={() => confirm(video.id, candidate.videoId)}
-                                            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1 text-sm text-primary-foreground hover:opacity-90"
                                         >
                                             <Check className="h-4 w-4" />
                                             Bevestig
-                                        </button>
-                                    </li>
-                                ))}
-                            </ul>
-                        </li>
-                    ))}
-                </ul>
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                )}
             </div>
         </AdminLayout>
     );

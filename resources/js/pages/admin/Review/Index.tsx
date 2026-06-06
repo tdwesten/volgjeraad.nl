@@ -1,5 +1,6 @@
 import AdminLayout from '@/layouts/AdminLayout';
 import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Link } from '@inertiajs/react';
 
 interface Municipality {
@@ -38,51 +39,51 @@ export default function ReviewIndex({ newsletters }: Props): JSX.Element {
                 {newsletters.length === 0 ? (
                     <p className="text-muted-foreground">Geen nieuwsbrieven in de wachtrij.</p>
                 ) : (
-                    <div className="space-y-2">
-                        {newsletters.map((item) => (
-                            <div
-                                key={item.id}
-                                className={`flex items-center justify-between rounded-lg border p-4 ${
-                                    item.low_confidence ? 'border-yellow-300 bg-yellow-50' : 'border-border'
-                                }`}
-                            >
-                                <div className="space-y-1">
-                                    <div className="flex items-center gap-2">
-                                        <span className="font-medium">{item.subject}</span>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Onderwerp</TableHead>
+                                <TableHead>Gemeente</TableHead>
+                                <TableHead>Datum</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead></TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {newsletters.map((item) => (
+                                <TableRow key={item.id}>
+                                    <TableCell className="font-medium">{item.subject}</TableCell>
+                                    <TableCell>{item.meeting?.municipality.name ?? '—'}</TableCell>
+                                    <TableCell className="text-sm text-muted-foreground">
+                                        {item.meeting?.starts_at
+                                            ? new Date(item.meeting.starts_at).toLocaleDateString('nl-NL', {
+                                                  day: 'numeric',
+                                                  month: 'long',
+                                                  year: 'numeric',
+                                              })
+                                            : '—'}
+                                    </TableCell>
+                                    <TableCell>
                                         {item.low_confidence && (
                                             <Badge variant="outline" className="border-yellow-400 text-yellow-700">
                                                 Lage betrouwbaarheid
                                             </Badge>
                                         )}
-                                    </div>
-                                    {item.meeting && (
-                                        <p className="text-sm text-muted-foreground">
-                                            {item.meeting.municipality.name}
-                                            {item.meeting.starts_at && (
-                                                <>
-                                                    {' '}
-                                                    &middot;{' '}
-                                                    {new Date(item.meeting.starts_at).toLocaleDateString('nl-NL', {
-                                                        day: 'numeric',
-                                                        month: 'long',
-                                                        year: 'numeric',
-                                                    })}
-                                                </>
-                                            )}
-                                        </p>
-                                    )}
-                                </div>
-                                {item.meeting && (
-                                    <Link
-                                        href={`/admin/review/${item.meeting.id}`}
-                                        className="text-sm text-primary hover:underline"
-                                    >
-                                        Bekijken &rarr;
-                                    </Link>
-                                )}
-                            </div>
-                        ))}
-                    </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        {item.meeting && (
+                                            <Link
+                                                href={`/admin/review/${item.meeting.id}`}
+                                                className="text-sm text-primary hover:underline"
+                                            >
+                                                Bekijken &rarr;
+                                            </Link>
+                                        )}
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
                 )}
             </div>
         </AdminLayout>
