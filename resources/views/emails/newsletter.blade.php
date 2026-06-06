@@ -1,4 +1,8 @@
 <x-mail::message>
+<x-mail::panel>
+Automatisch samengevat door AI. Controleer altijd de bronnen voor officiële informatie.
+</x-mail::panel>
+
 [Bekijk deze e-mail in je browser →]({{ $webUrl }})
 
 # {{ $newsletter->subject }}
