@@ -27,7 +27,7 @@ class ReviewReadyMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.review-ready',
+            markdown: 'emails.review-ready',
             with: [
                 'meeting' => $this->meeting,
                 'reviewUrl' => route('admin.review.show', $this->meeting),

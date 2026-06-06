@@ -25,7 +25,7 @@ class ConfirmSubscriptionMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.confirm-subscription',
+            markdown: 'emails.confirm-subscription',
             with: [
                 'confirmUrl' => url('/bevestig/'.$this->subscriber->confirmation_token),
                 'municipalityName' => $this->subscriber->municipality->name,

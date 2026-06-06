@@ -47,7 +47,7 @@ class NewsletterMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.newsletter',
+            markdown: 'emails.newsletter',
             with: [
                 'newsletter' => $this->newsletter,
                 'level' => $this->level,
