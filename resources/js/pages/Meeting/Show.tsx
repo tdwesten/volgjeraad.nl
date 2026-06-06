@@ -102,7 +102,7 @@ export default function MeetingShow({ municipality, meeting, agendaItems, video 
                     <button
                         type="button"
                         onClick={scrollToVideo}
-                        className="flex w-full items-center gap-3 rounded-md border border-border bg-muted/50 px-4 py-3 text-left text-sm transition-colors hover:bg-muted"
+                        className="flex w-full cursor-pointer items-center gap-3 rounded-md border border-border bg-muted/50 px-4 py-3 text-left text-sm transition-colors hover:bg-muted"
                     >
                         <PlayCircle className="h-5 w-5 shrink-0 text-primary" />
                         <span className="flex-1">

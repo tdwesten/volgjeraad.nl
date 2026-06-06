@@ -86,6 +86,14 @@ export default function MunicipalityShow({ municipality, meetings }: Props): JSX
                     </div>
                 )}
 
+                <div className="rounded-lg border border-border p-6">
+                    <h2 className="mb-4 text-lg font-semibold">Blijf op de hoogte</h2>
+                    <p className="mb-4 text-sm text-muted-foreground">
+                        Ontvang een e-mailsamenvatting na elke raadsvergadering.
+                    </p>
+                    <SubscribeForm municipalitySlug={municipality.slug} />
+                </div>
+
                 {meetings.length > 0 ? (
                     <div className="space-y-6">
                         <h2 className="text-lg font-semibold">Recente samenvattingen</h2>
@@ -126,14 +134,6 @@ export default function MunicipalityShow({ municipality, meetings }: Props): JSX
                 ) : (
                     <p className="text-muted-foreground">Nog geen gepubliceerde samenvattingen beschikbaar.</p>
                 )}
-
-                <div className="rounded-lg border border-border p-6">
-                    <h2 className="mb-4 text-lg font-semibold">Blijf op de hoogte</h2>
-                    <p className="mb-4 text-sm text-muted-foreground">
-                        Ontvang een e-mailsamenvatting na elke raadsvergadering.
-                    </p>
-                    <SubscribeForm municipalitySlug={municipality.slug} />
-                </div>
 
                 <div>
                     <Link
