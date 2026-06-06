@@ -2,7 +2,7 @@ import PublicLayout from '@/layouts/PublicLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import SummaryCard from '@/components/SummaryCard';
 import { Link } from '@inertiajs/react';
-import { Clock } from 'lucide-react';
+import { Clock, FileText, PlayCircle, Sparkles } from 'lucide-react';
 
 interface SummaryData {
     id: number;
@@ -61,6 +61,10 @@ export default function MeetingShow({ municipality, meeting, agendaItems, video 
 
     const defaultTab = hasStandard ? 'standard' : 'simple';
 
+    const scrollToVideo = (): void => {
+        document.getElementById('video')?.scrollIntoView({ behavior: 'smooth' });
+    };
+
     const sourceLinks = agendaItems.flatMap((item) =>
         item.mediaObjects
             .filter((m) => m.url || m.original_url)
@@ -95,7 +99,64 @@ export default function MeetingShow({ municipality, meeting, agendaItems, video 
                 </div>
 
                 {video && (
-                    <div className="space-y-2">
+                    <button
+                        type="button"
+                        onClick={scrollToVideo}
+                        className="flex w-full items-center gap-3 rounded-md border border-border bg-muted/50 px-4 py-3 text-left text-sm transition-colors hover:bg-muted"
+                    >
+                        <PlayCircle className="h-5 w-5 shrink-0 text-primary" />
+                        <span className="flex-1">
+                            Van deze vergadering is ook een video-uitzending beschikbaar.
+                        </span>
+                        <span className="shrink-0 font-medium text-primary">Bekijk de video &darr;</span>
+                    </button>
+                )}
+
+                {hasSummaries ? (
+                    <div className="space-y-4">
+                        <div className="flex items-start gap-2 rounded-md border border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+                            <Sparkles className="mt-0.5 h-4 w-4 shrink-0" />
+                            <span>Automatisch samengevat door AI. Controleer altijd de bronnen voor officiële informatie.</span>
+                        </div>
+                        <div className="space-y-2">
+                            <Tabs defaultValue={defaultTab}>
+                                <TabsList>
+                                    {hasStandard && <TabsTrigger value="standard">Standaard</TabsTrigger>}
+                                    {hasSimple && <TabsTrigger value="simple">Eenvoudig (B1)</TabsTrigger>}
+                                </TabsList>
+                                {hasStandard && hasSimple && (
+                                    <p className="mt-2 text-sm text-muted-foreground">
+                                        Kies hoe je de samenvatting wilt lezen. <strong>Standaard</strong> volgt de inhoud en toon van de
+                                        vergadering. <strong>Eenvoudig (B1)</strong> is herschreven in begrijpelijke taal, met kortere zinnen
+                                        en zonder vakjargon.
+                                    </p>
+                                )}
+                                {hasStandard && (
+                                    <TabsContent value="standard" className="mt-4">
+                                        <SummaryWithCard summary={meeting.standard_summary!} label="Standaard" />
+                                    </TabsContent>
+                                )}
+                                {hasSimple && (
+                                    <TabsContent value="simple" className="mt-4">
+                                        <SummaryWithCard summary={meeting.simple_summary!} label="Eenvoudig (B1)" />
+                                    </TabsContent>
+                                )}
+                            </Tabs>
+                        </div>
+                    </div>
+                ) : (
+                    <p className="flex items-center gap-2 text-muted-foreground">
+                        <Clock className="h-4 w-4" />
+                        Nog geen samenvatting beschikbaar voor deze vergadering.
+                    </p>
+                )}
+
+                {video && (
+                    <div id="video" className="space-y-2 scroll-mt-20">
+                        <h3 className="flex items-center gap-2 text-sm font-semibold">
+                            <PlayCircle className="h-4 w-4" />
+                            Video-uitzending
+                        </h3>
                         <div className="aspect-video w-full overflow-hidden rounded-lg border border-border">
                             <iframe
                                 src={`https://www.youtube.com/embed/${video.youtube_video_id}`}
@@ -118,38 +179,16 @@ export default function MeetingShow({ municipality, meeting, agendaItems, video 
                     </div>
                 )}
 
-                {hasSummaries ? (
-                    <div className="space-y-4">
-                        <div className="flex items-start gap-2 rounded-md border border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
-                            <span>Automatisch samengevat door AI. Controleer altijd de bronnen voor officiële informatie.</span>
-                        </div>
-                        <Tabs defaultValue={defaultTab}>
-                            <TabsList>
-                                {hasStandard && <TabsTrigger value="standard">Standaard</TabsTrigger>}
-                                {hasSimple && <TabsTrigger value="simple">Eenvoudig (B1)</TabsTrigger>}
-                            </TabsList>
-                            {hasStandard && (
-                                <TabsContent value="standard" className="mt-4">
-                                    <SummaryWithCard summary={meeting.standard_summary!} label="Standaard" />
-                                </TabsContent>
-                            )}
-                            {hasSimple && (
-                                <TabsContent value="simple" className="mt-4">
-                                    <SummaryWithCard summary={meeting.simple_summary!} label="Eenvoudig (B1)" />
-                                </TabsContent>
-                            )}
-                        </Tabs>
-                    </div>
-                ) : (
-                    <p className="flex items-center gap-2 text-muted-foreground">
-                        <Clock className="h-4 w-4" />
-                        Nog geen samenvatting beschikbaar voor deze vergadering.
-                    </p>
-                )}
-
                 {sourceLinks.length > 0 && (
                     <div className="space-y-2">
-                        <h3 className="text-sm font-semibold">Bronnen</h3>
+                        <h3 className="flex items-center gap-2 text-sm font-semibold">
+                            <FileText className="h-4 w-4" />
+                            Bronnen
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                            De officiële documenten van deze vergadering. Raadpleeg deze voor de volledige en gecontroleerde
+                            informatie.
+                        </p>
                         <ul className="space-y-1">
                             {sourceLinks.map((media) => (
                                 <li key={media.id} className="text-sm">
