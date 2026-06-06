@@ -25,6 +25,10 @@ class MunicipalitySeeder extends Seeder
                 'ai_model_eval' => config('volgjeraad.ai.default_eval_model'),
                 'raad_pattern' => 'raadsvergadering',
                 'sender_name' => 'Volgjeraad Brummen',
+                'settings' => [
+                    // YouTube-kanaal van RTV794/VoorstVeluwezoom (zendt de raad uit).
+                    'youtube_channel_id' => env('BRUMMEN_YOUTUBE_CHANNEL_ID', 'UCGc0GMqy0qVntwXlEPTnqaA'),
+                ],
             ],
         );
     }
