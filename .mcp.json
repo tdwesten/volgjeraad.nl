@@ -13,6 +13,14 @@
                 "shadcn@latest",
                 "mcp"
             ]
+        },
+        "instruckt": {
+            "command": "php",
+            "args": [
+                "/Users/thomasvanderwesten/server/volgjeraad.nl/artisan",
+                "mcp:start",
+                "instruckt"
+            ]
         }
     }
 }
