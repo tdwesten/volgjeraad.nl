@@ -41,12 +41,44 @@ class GenerateMeetingSummary
         $maxSourceChars = (int) config('volgjeraad.ai.max_source_chars', 24000);
         $maxTranscriptChars = (int) config('volgjeraad.ai.max_transcript_chars', 60000);
 
-        // Concat raw agenda texts in position order
-        $agendaText = $meeting->agendaItems()
-            ->orderBy('position')
-            ->get()
-            ->map(fn ($item) => $item->sourceText())
-            ->filter(fn ($text) => $text !== '')
+        // Build agenda text: besluitenlijst docs first (formal decisions), then rest in position order.
+        $items = $meeting->agendaItems()->orderBy('position')->get();
+        $besluitenlijstTexts = [];
+        $otherTexts = [];
+
+        foreach ($items as $item) {
+            $texts = $item->mediaObjects()
+                ->withText()
+                ->orderBy('position')
+                ->pluck('md_text')
+                ->filter()
+                ->values();
+
+            if ($texts->isEmpty()) {
+                continue;
+            }
+
+            $isBesluitenlijst = str_contains(mb_strtolower($item->name ?? ''), 'besluitenlijst');
+            if (! $isBesluitenlijst) {
+                foreach ($item->mediaObjects as $mo) {
+                    if (str_contains(mb_strtolower($mo->name ?? ''), 'besluitenlijst')
+                        || str_contains(mb_strtolower($mo->file_name ?? ''), 'besluitenlijst')) {
+                        $isBesluitenlijst = true;
+                        break;
+                    }
+                }
+            }
+
+            $block = $texts->implode("\n\n");
+            if ($isBesluitenlijst) {
+                $besluitenlijstTexts[] = $block;
+            } else {
+                $otherTexts[] = $block;
+            }
+        }
+
+        $agendaText = collect([...$besluitenlijstTexts, ...$otherTexts])
+            ->filter()
             ->implode("\n\n---\n\n");
 
         // Collect transcript text when the video is fully transcribed

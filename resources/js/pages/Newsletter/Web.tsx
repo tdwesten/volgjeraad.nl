@@ -1,5 +1,6 @@
 import PublicLayout from '@/layouts/PublicLayout';
 import { Link } from '@inertiajs/react';
+import ReactMarkdown from 'react-markdown';
 
 interface Summary {
     id: number;
@@ -52,7 +53,9 @@ export default function NewsletterWeb({ newsletter }: Props): JSX.Element {
                         {standardSummaries.map((summary) => (
                             <div key={summary.id} className="space-y-3">
                                 <h2 className="text-lg font-semibold">{summary.title}</h2>
-                                <div className="whitespace-pre-wrap text-sm">{summary.body}</div>
+                                <div className="prose prose-sm max-w-none text-foreground">
+                                    <ReactMarkdown>{summary.body}</ReactMarkdown>
+                                </div>
                             </div>
                         ))}
                     </div>

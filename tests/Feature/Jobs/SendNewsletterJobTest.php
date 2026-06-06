@@ -5,7 +5,6 @@ use App\Enums\NewsletterStatus;
 use App\Enums\SummaryLevel;
 use App\Jobs\SendNewsletterJob;
 use App\Mail\NewsletterMail;
-use App\Models\AgendaItem;
 use App\Models\Meeting;
 use App\Models\Municipality;
 use App\Models\Newsletter;
@@ -20,7 +19,6 @@ function makeNewsletterWithSummaries(): Newsletter
 {
     $municipality = Municipality::factory()->create();
     $meeting = Meeting::factory()->create(['municipality_id' => $municipality->id]);
-    $item = AgendaItem::factory()->create(['meeting_id' => $meeting->id, 'position' => 1]);
 
     $newsletter = Newsletter::factory()->create([
         'municipality_id' => $municipality->id,
@@ -30,14 +28,18 @@ function makeNewsletterWithSummaries(): Newsletter
 
     foreach (SummaryLevel::cases() as $level) {
         $summary = Summary::factory()->create([
-            'summarizable_type' => AgendaItem::class,
-            'summarizable_id' => $item->id,
+            'summarizable_type' => Meeting::class,
+            'summarizable_id' => $meeting->id,
             'municipality_id' => $municipality->id,
             'meeting_id' => $meeting->id,
             'level' => $level->value,
             'status' => 'published',
         ]);
-        $newsletter->summaries()->attach($summary->id, ['position' => 1]);
+        $newsletter->summaries()->attach($summary->id, ['position' => match ($level->value) {
+            'standard' => 1,
+            'simple' => 2,
+            default => 99,
+        }]);
     }
 
     return $newsletter->fresh();
@@ -57,9 +59,7 @@ test('sends mail to confirmed subscribers of matching level', function (): void 
         'level' => SummaryLevel::Simple->value,
     ]);
 
-    (new SendNewsletterJob($newsletter->id))->handle(
-        new SendNewsletter
-    );
+    (new SendNewsletterJob($newsletter->id))->handle(new SendNewsletter);
 
     Mail::assertSent(NewsletterMail::class, fn ($m) => $m->hasTo($standardSubscriber->email));
     Mail::assertSent(NewsletterMail::class, fn ($m) => $m->hasTo($simpleSubscriber->email));
@@ -75,9 +75,7 @@ test('does not send to unconfirmed subscribers', function (): void {
         'level' => SummaryLevel::Standard->value,
     ]);
 
-    (new SendNewsletterJob($newsletter->id))->handle(
-        new SendNewsletter
-    );
+    (new SendNewsletterJob($newsletter->id))->handle(new SendNewsletter);
 
     Mail::assertNothingSent();
 });
@@ -93,9 +91,7 @@ test('does not send to unsubscribed subscribers', function (): void {
         'unsubscribed_at' => now(),
     ]);
 
-    (new SendNewsletterJob($newsletter->id))->handle(
-        new SendNewsletter
-    );
+    (new SendNewsletterJob($newsletter->id))->handle(new SendNewsletter);
 
     Mail::assertNothingSent();
 });
@@ -110,9 +106,7 @@ test('standard subscribers receive standard summaries only', function (): void {
         'level' => SummaryLevel::Standard->value,
     ]);
 
-    (new SendNewsletterJob($newsletter->id))->handle(
-        new SendNewsletter
-    );
+    (new SendNewsletterJob($newsletter->id))->handle(new SendNewsletter);
 
     Mail::assertSent(NewsletterMail::class, function (NewsletterMail $mail): bool {
         return $mail->level === SummaryLevel::Standard
@@ -134,9 +128,7 @@ test('updates recipients_count and sent status after sending', function (): void
         'level' => SummaryLevel::Simple->value,
     ]);
 
-    (new SendNewsletterJob($newsletter->id))->handle(
-        new SendNewsletter
-    );
+    (new SendNewsletterJob($newsletter->id))->handle(new SendNewsletter);
 
     $fresh = $newsletter->fresh();
     expect($fresh->status)->toBe(NewsletterStatus::Sent);
@@ -155,9 +147,7 @@ test('idempotent — already sent newsletter is not resent', function (): void {
         'level' => SummaryLevel::Standard->value,
     ]);
 
-    (new SendNewsletterJob($newsletter->id))->handle(
-        new SendNewsletter
-    );
+    (new SendNewsletterJob($newsletter->id))->handle(new SendNewsletter);
 
     Mail::assertNothingSent();
 });

@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Actions\Ai\EvaluateSummaryCase;
-use App\Ai\Agents\AgendaSummaryAgent;
+use App\Ai\Agents\MeetingSummaryAgent;
 use App\Ai\Agents\SummaryEvaluationAgent;
 use App\Enums\EvaluationStatus;
 use App\Models\EvaluationCase;
@@ -26,7 +26,7 @@ class RunSummaryEvalCommand extends Command
         $live = (bool) $this->option('live');
 
         if (! $live) {
-            AgendaSummaryAgent::fake([null]);
+            MeetingSummaryAgent::fake([null]);
             SummaryEvaluationAgent::fake([[
                 'score' => 75,
                 'passed' => true,

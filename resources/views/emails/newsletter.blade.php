@@ -26,7 +26,7 @@
     @foreach($summaries as $summary)
         <div style="margin-bottom: 32px; padding-bottom: 32px; border-bottom: 1px solid #e5e7eb;">
             <h2 style="font-size: 17px; font-weight: 600; margin-bottom: 8px;">{{ $summary->title }}</h2>
-            <div style="font-size: 14px; line-height: 1.6; white-space: pre-wrap;">{{ $summary->body }}</div>
+            <div style="font-size: 14px; line-height: 1.6;">{!! Str::markdown($summary->body) !!}</div>
         </div>
     @endforeach
 

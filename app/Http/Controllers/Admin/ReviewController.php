@@ -51,8 +51,15 @@ class ReviewController extends Controller
 
         $newsletter = $meeting->newsletter;
 
-        $standardSummaries = $newsletter->summaries->where('level', 'standard')->values();
-        $simpleSummaries = $newsletter->summaries->where('level', 'simple')->values();
+        $std = $newsletter->summaries->firstWhere('level', 'standard');
+        $sim = $newsletter->summaries->firstWhere('level', 'simple');
+
+        $toArray = fn (?Summary $s): ?array => $s ? [
+            'id' => $s->id,
+            'title' => $s->title,
+            'body' => $s->body,
+            'confidence' => $s->confidence,
+        ] : null;
 
         return Inertia::render('admin/Review/Show', [
             'meeting' => [
@@ -66,20 +73,8 @@ class ReviewController extends Controller
                 'subject' => $newsletter->subject,
                 'status' => $newsletter->status->value,
             ],
-            'standardSummaries' => $standardSummaries->map(fn (Summary $s): array => [
-                'id' => $s->id,
-                'title' => $s->title,
-                'body' => $s->body,
-                'confidence' => $s->confidence,
-                'position' => $s->pivot->position,
-            ]),
-            'simpleSummaries' => $simpleSummaries->map(fn (Summary $s): array => [
-                'id' => $s->id,
-                'title' => $s->title,
-                'body' => $s->body,
-                'confidence' => $s->confidence,
-                'position' => $s->pivot->position,
-            ]),
+            'standardSummary' => $toArray($std),
+            'simpleSummary' => $toArray($sim),
         ]);
     }
 

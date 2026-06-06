@@ -1,6 +1,7 @@
 import PublicLayout from '@/layouts/PublicLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Link } from '@inertiajs/react';
+import ReactMarkdown from 'react-markdown';
 
 interface SummaryData {
     id: number;
@@ -46,7 +47,9 @@ function SummaryBody({ summary }: { summary: SummaryData }): JSX.Element {
     return (
         <div className="space-y-4">
             <h2 className="text-xl font-semibold">{summary.title}</h2>
-            <div className="prose prose-sm max-w-none whitespace-pre-wrap text-foreground">{summary.body}</div>
+            <div className="prose prose-sm max-w-none text-foreground">
+                <ReactMarkdown>{summary.body}</ReactMarkdown>
+            </div>
             <p className="text-xs text-muted-foreground italic">
                 Automatisch samengevat door AI. Controleer altijd de bronnen voor officiële informatie.
             </p>

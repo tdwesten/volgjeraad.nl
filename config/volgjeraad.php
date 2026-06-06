@@ -13,11 +13,12 @@ return [
     'ai' => [
         'default_summary_model' => env('AI_SUMMARY_MODEL', 'gpt-4o-mini'),
         'default_eval_model' => env('AI_EVAL_MODEL', 'gpt-4o-mini'),
-        'prompt_version' => 'v1',
+        'prompt_version' => 'v2',
         'cost_cap_cents_per_meeting' => 100,
         'confidence_highlight_threshold' => 60,
-        // Max chars of source text passed to the AI (≈6000 tokens at 4 chars/token)
-        'max_source_chars' => 24000,
+        // Max chars of agenda+PDF source text passed to the AI (≈24 000 chars ≈ 6000 tokens).
+        // Verhoogd t.o.v. v1 omdat we nu alle stukken als één geheel meesturen.
+        'max_source_chars' => 80000,
         // Apart tekenbudget voor het transcript-blok zodat het transcript nooit
         // volledig wegvalt achter een lange agenda/PDF-bron (≈15000 tokens).
         'max_transcript_chars' => 60000,

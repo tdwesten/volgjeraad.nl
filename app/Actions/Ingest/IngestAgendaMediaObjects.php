@@ -3,8 +3,6 @@
 namespace App\Actions\Ingest;
 
 use App\Actions\Summaries\DispatchMeetingSummariesIfReady;
-use App\Enums\SummaryLevel;
-use App\Jobs\SummarizeAgendaItemJob;
 use App\Models\AgendaItem;
 use App\Models\MediaObject;
 use App\Services\Ori\OriClient;
@@ -60,7 +58,6 @@ class IngestAgendaMediaObjects
     {
         $meeting = $item->meeting;
 
-        // Check all agenda items of meeting have fetched attachments
         $pendingCount = $meeting->agendaItems()
             ->whereNull('attachments_fetched_at')
             ->count();
@@ -69,19 +66,6 @@ class IngestAgendaMediaObjects
             return;
         }
 
-        // Idempotency: only dispatch if not already summarized
-        if ($meeting->summarized_at !== null) {
-            return;
-        }
-
-        // Agendapunt-samenvattingen (PDF) draaien meteen — niet afhankelijk van transcript.
-        foreach ($meeting->agendaItems as $agendaItem) {
-            foreach (SummaryLevel::cases() as $level) {
-                dispatch(new SummarizeAgendaItemJob($agendaItem->id, $level));
-            }
-        }
-
-        // Meeting-samenvatting wacht op transcript-resolutie (wachten vóór review).
         $this->dispatchMeetingSummaries->handle($meeting);
     }
 }

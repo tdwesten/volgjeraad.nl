@@ -1,6 +1,6 @@
 <?php
 
-use App\Ai\Agents\AgendaSummaryAgent;
+use App\Ai\Agents\MeetingSummaryAgent;
 use App\Ai\Agents\SummaryEvaluationAgent;
 use App\Enums\EvaluationStatus;
 use App\Models\EvaluationCase;
@@ -12,7 +12,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 test('failed judge with unmet expected facts results in Failed run and exit 1', function (): void {
-    AgendaSummaryAgent::fake([[
+    MeetingSummaryAgent::fake([[
         'title' => 'Samenvatting',
         'body' => 'Algemene tekst zonder het verwachte feit.',
         'impact_note' => '',
@@ -45,7 +45,7 @@ test('failed judge with unmet expected facts results in Failed run and exit 1', 
 });
 
 test('passed judge with no expected facts results in Passed run and exit 0', function (): void {
-    AgendaSummaryAgent::fake([[
+    MeetingSummaryAgent::fake([[
         'title' => 'Bestemmingsplan goedgekeurd',
         'body' => 'De raad heeft het bestemmingsplan unaniem goedgekeurd.',
         'impact_note' => 'Bewoners kunnen bezwaar indienen.',

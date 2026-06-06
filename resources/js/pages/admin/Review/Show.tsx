@@ -5,13 +5,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Link, useForm, router, usePage } from '@inertiajs/react';
 import { type PageProps } from '@/types';
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 
 interface SummaryItem {
     id: number;
     title: string;
     body: string;
     confidence: number | null;
-    position: number;
 }
 
 interface Meeting {
@@ -30,8 +30,8 @@ interface Newsletter {
 interface Props {
     meeting: Meeting;
     newsletter: Newsletter;
-    standardSummaries: SummaryItem[];
-    simpleSummaries: SummaryItem[];
+    standardSummary: SummaryItem | null;
+    simpleSummary: SummaryItem | null;
 }
 
 function SummaryCard({
@@ -55,16 +55,14 @@ function SummaryCard({
         <div className={`rounded-lg border p-4 ${isLowConfidence ? 'border-yellow-300' : 'border-border'}`}>
             <div className="mb-2 flex items-center justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</span>
-                <div className="flex items-center gap-2">
-                    {summary.confidence !== null && (
-                        <Badge
-                            variant="outline"
-                            className={isLowConfidence ? 'border-yellow-400 text-yellow-700' : ''}
-                        >
-                            {summary.confidence}% betrouwbaar
-                        </Badge>
-                    )}
-                </div>
+                {summary.confidence !== null && (
+                    <Badge
+                        variant="outline"
+                        className={isLowConfidence ? 'border-yellow-400 text-yellow-700' : ''}
+                    >
+                        {summary.confidence}% betrouwbaar
+                    </Badge>
+                )}
             </div>
 
             <h3 className="mb-2 font-medium">{summary.title}</h3>
@@ -74,7 +72,7 @@ function SummaryCard({
                     <Textarea
                         value={data.body}
                         onChange={(e) => setData('body', e.target.value)}
-                        rows={10}
+                        rows={12}
                         className="text-sm"
                     />
                     <div className="flex gap-2">
@@ -88,7 +86,9 @@ function SummaryCard({
                 </div>
             ) : (
                 <div className="space-y-2">
-                    <p className="whitespace-pre-wrap text-sm">{data.body}</p>
+                    <div className="prose prose-sm max-w-none text-foreground">
+                    <ReactMarkdown>{data.body}</ReactMarkdown>
+                </div>
                     <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
                         Bewerken
                     </Button>
@@ -98,15 +98,14 @@ function SummaryCard({
     );
 }
 
-export default function ReviewShow({ meeting, newsletter, standardSummaries, simpleSummaries }: Props): JSX.Element {
+export default function ReviewShow({ meeting, newsletter, standardSummary, simpleSummary }: Props): JSX.Element {
     const { flash } = usePage<PageProps>().props;
-    const positions = [...new Set([...standardSummaries, ...simpleSummaries].map((s) => s.position))].sort(
-        (a, b) => a - b,
-    );
 
     const approve = (): void => {
         router.post(`/admin/review/${meeting.id}/approve`);
     };
+
+    const hasSummaries = standardSummary !== null || simpleSummary !== null;
 
     return (
         <AdminLayout>
@@ -141,34 +140,25 @@ export default function ReviewShow({ meeting, newsletter, standardSummaries, sim
                     </div>
                 )}
 
-                {positions.length === 0 ? (
-                    <p className="text-muted-foreground">Geen samenvattingen beschikbaar.</p>
-                ) : (
-                    <div className="space-y-8">
-                        {positions.map((pos) => {
-                            const std = standardSummaries.find((s) => s.position === pos);
-                            const sim = simpleSummaries.find((s) => s.position === pos);
-
-                            return (
-                                <div key={pos} className="grid gap-4 md:grid-cols-2">
-                                    {std ? (
-                                        <SummaryCard summary={std} label="Standaard" />
-                                    ) : (
-                                        <div className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
-                                            Geen standaard samenvatting
-                                        </div>
-                                    )}
-                                    {sim ? (
-                                        <SummaryCard summary={sim} label="Eenvoudig (B1)" />
-                                    ) : (
-                                        <div className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
-                                            Geen B1-samenvatting
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })}
+                {hasSummaries ? (
+                    <div className="grid gap-4 md:grid-cols-2">
+                        {standardSummary ? (
+                            <SummaryCard summary={standardSummary} label="Standaard" />
+                        ) : (
+                            <div className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
+                                Geen standaard samenvatting
+                            </div>
+                        )}
+                        {simpleSummary ? (
+                            <SummaryCard summary={simpleSummary} label="Eenvoudig (B1)" />
+                        ) : (
+                            <div className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
+                                Geen B1-samenvatting
+                            </div>
+                        )}
                     </div>
+                ) : (
+                    <p className="text-muted-foreground">Geen samenvattingen beschikbaar.</p>
                 )}
             </div>
         </AdminLayout>

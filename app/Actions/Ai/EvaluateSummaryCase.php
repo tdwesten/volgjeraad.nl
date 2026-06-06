@@ -2,7 +2,7 @@
 
 namespace App\Actions\Ai;
 
-use App\Ai\Agents\AgendaSummaryAgent;
+use App\Ai\Agents\MeetingSummaryAgent;
 use App\Ai\Agents\SummaryEvaluationAgent;
 use App\Enums\EvaluationStatus;
 use App\Enums\SummaryLevel;
@@ -16,7 +16,7 @@ class EvaluateSummaryCase
     {
         // Generate summary from source_text using the appropriate level agent
         $level = SummaryLevel::from($case->level);
-        $summaryAgent = new AgendaSummaryAgent($level, $model, $promptVersion);
+        $summaryAgent = new MeetingSummaryAgent($level, $model, $promptVersion);
         $summaryResponse = $summaryAgent->prompt($case->source_text, provider: Lab::OpenAI, model: $model);
         $summaryText = $summaryResponse->text ?? '';
 

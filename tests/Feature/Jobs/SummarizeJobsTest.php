@@ -1,14 +1,10 @@
 <?php
 
-use App\Actions\Summaries\GenerateAgendaItemSummary;
 use App\Actions\Summaries\GenerateMeetingSummary;
-use App\Ai\Agents\AgendaSummaryAgent;
 use App\Ai\Agents\MeetingSummaryAgent;
 use App\Enums\SummaryLevel;
 use App\Jobs\ComposeNewsletterJob;
-use App\Jobs\SummarizeAgendaItemJob;
 use App\Jobs\SummarizeMeetingJob;
-use App\Models\AgendaItem;
 use App\Models\Meeting;
 use App\Models\Municipality;
 use App\Models\Summary;
@@ -16,26 +12,6 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 
 uses(RefreshDatabase::class);
-
-test('SummarizeAgendaItemJob calls GenerateAgendaItemSummary action', function (): void {
-    AgendaSummaryAgent::fake([[
-        'title' => 'Test', 'body' => 'Body', 'impact_note' => 'Note', 'confidence' => 80, 'flags' => [],
-    ]]);
-
-    $municipality = Municipality::factory()->create(['launch_date' => '2026-01-01']);
-    $meeting = Meeting::factory()->create(['municipality_id' => $municipality->id]);
-    $item = AgendaItem::factory()->create(['meeting_id' => $meeting->id]);
-
-    $action = Mockery::mock(GenerateAgendaItemSummary::class);
-    $action->shouldReceive('handle')->once()->with(
-        Mockery::on(fn ($i) => $i->id === $item->id),
-        SummaryLevel::Standard,
-    );
-    app()->instance(GenerateAgendaItemSummary::class, $action);
-
-    $job = new SummarizeAgendaItemJob($item->id, SummaryLevel::Standard);
-    $job->handle(app(GenerateAgendaItemSummary::class));
-});
 
 test('SummarizeMeetingJob dispatches ComposeNewsletterJob when all summary levels exist', function (): void {
     Bus::fake([ComposeNewsletterJob::class]);
@@ -61,7 +37,7 @@ test('SummarizeMeetingJob dispatches ComposeNewsletterJob when all summary level
         'body' => 'Body',
         'input_tokens' => 0,
         'output_tokens' => 0,
-        'prompt_version' => 'v1',
+        'prompt_version' => 'v2',
         'model' => 'gpt-4o-mini',
     ]);
 
