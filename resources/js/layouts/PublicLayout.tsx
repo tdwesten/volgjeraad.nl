@@ -25,14 +25,22 @@ export default function PublicLayout({ children }: PropsWithChildren): JSX.Eleme
                         </p>
                     </div>
                     <p>
-                        Gemaakt door Thomas van der Westen ·{' '}
                         <a
-                            href="https://trivle.com"
+                            href="https://github.com/tdwesten/volgjeraad.nl"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="hover:underline"
                         >
-                            Trivle
+                            Open source
+                        </a>{' '}
+                        · Een tool van Thomas van der Westen —{' '}
+                        <a
+                            href="https://codesmiths.nl"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:underline"
+                        >
+                            codesmiths.nl
                         </a>
                     </p>
                 </div>

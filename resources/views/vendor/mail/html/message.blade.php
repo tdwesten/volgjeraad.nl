@@ -23,7 +23,7 @@
 <x-mail::footer>
 *Deze e-mail is automatisch met AI gegenereerd.*
 
-© {{ date('Y') }} {{ config('app.name') }} · Een tool van Thomas van der Westen — [codesmiths.nl](https://codesmiths.nl)
+[Open source](https://github.com/tdwesten/volgjeraad.nl) · Een tool van Thomas van der Westen — [codesmiths.nl](https://codesmiths.nl)
 </x-mail::footer>
 </x-slot:footer>
 </x-mail::layout>

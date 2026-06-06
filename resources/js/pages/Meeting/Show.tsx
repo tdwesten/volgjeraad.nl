@@ -2,7 +2,7 @@ import PublicLayout from '@/layouts/PublicLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import SummaryCard from '@/components/SummaryCard';
 import { Link } from '@inertiajs/react';
-import { Clock, FileText, PlayCircle, Sparkles } from 'lucide-react';
+import { ChevronDown, Clock, FileText, PlayCircle, Sparkles } from 'lucide-react';
 
 interface SummaryData {
     id: number;
@@ -114,10 +114,36 @@ export default function MeetingShow({ municipality, meeting, agendaItems, video 
 
                 {hasSummaries ? (
                     <div className="space-y-4">
-                        <div className="flex items-start gap-2 rounded-md border border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
-                            <Sparkles className="mt-0.5 h-4 w-4 shrink-0" />
-                            <span>Automatisch samengevat door AI. Controleer altijd de bronnen voor officiële informatie.</span>
-                        </div>
+                        <details className="group rounded-md border border-border bg-muted/50 text-sm text-muted-foreground">
+                            <summary className="flex cursor-pointer list-none items-start gap-2 px-3 py-2 [&::-webkit-details-marker]:hidden">
+                                <Sparkles className="mt-0.5 h-4 w-4 shrink-0" />
+                                <span className="flex-1">
+                                    Automatisch samengevat door AI. Controleer altijd de bronnen voor officiële informatie.
+                                </span>
+                                <ChevronDown className="mt-0.5 h-4 w-4 shrink-0 transition-transform group-open:rotate-180" />
+                            </summary>
+                            <div className="space-y-2 border-t border-border px-3 py-3">
+                                <p>
+                                    Deze samenvatting is automatisch opgesteld door een AI-taalmodel. Als bron zijn de officiële
+                                    documenten van deze vergadering gebruikt — je vindt ze onderaan deze pagina onder{' '}
+                                    <strong>Bronnen</strong>.
+                                </p>
+                                <p>
+                                    Volgjeraad is open source. De gebruikte prompts en de volledige verwerking zijn openbaar in te
+                                    zien op{' '}
+                                    <a
+                                        href="https://github.com/tdwesten/volgjeraad.nl"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-primary hover:underline"
+                                    >
+                                        GitHub
+                                    </a>
+                                    .
+                                </p>
+                                <p>AI kan fouten maken. Raadpleeg voor beslissingen altijd de officiële bronnen.</p>
+                            </div>
+                        </details>
                         <div className="space-y-2">
                             <Tabs defaultValue={defaultTab}>
                                 <TabsList>
