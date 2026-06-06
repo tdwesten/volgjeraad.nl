@@ -2,6 +2,7 @@
 
 namespace App\Actions\Ingest;
 
+use App\Actions\Logging\RecordProcessingEvent;
 use App\Actions\Summaries\DispatchMeetingSummariesIfReady;
 use App\Models\AgendaItem;
 use App\Models\MediaObject;
@@ -14,6 +15,7 @@ class IngestAgendaMediaObjects
     public function __construct(
         private OriClient $client,
         private DispatchMeetingSummariesIfReady $dispatchMeetingSummaries,
+        private RecordProcessingEvent $log,
     ) {}
 
     public function handle(AgendaItem $item): void
@@ -65,6 +67,8 @@ class IngestAgendaMediaObjects
         if ($pendingCount > 0) {
             return;
         }
+
+        $this->log->handle($meeting, 'media', 'success', 'Alle bijlagen opgehaald, samenvattingspijplijn gestart');
 
         $this->dispatchMeetingSummaries->handle($meeting);
     }

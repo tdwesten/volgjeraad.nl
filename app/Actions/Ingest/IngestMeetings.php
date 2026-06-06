@@ -2,6 +2,7 @@
 
 namespace App\Actions\Ingest;
 
+use App\Actions\Logging\RecordProcessingEvent;
 use App\Enums\IngestMode;
 use App\Enums\MeetingType;
 use App\Jobs\IngestMeetingAgendaJob;
@@ -16,6 +17,7 @@ class IngestMeetings
 {
     public function __construct(
         private OriClient $client,
+        private RecordProcessingEvent $log,
     ) {}
 
     public function handle(Municipality $m): void
@@ -150,6 +152,15 @@ class IngestMeetings
                     ->orWhereIn('ori_id', $changedOriIds);
             })
             ->get();
+
+        $this->log->handle(
+            null,
+            'ingest',
+            'info',
+            count($ingestedOriIds).' vergaderingen gevonden, '.count($changedOriIds).' gewijzigd, '.count($toDispatch).' agenda-ingest gedispatcht',
+            ['municipality' => $m->name],
+            $m->id,
+        );
 
         foreach ($toDispatch as $meeting) {
             dispatch(new IngestMeetingAgendaJob($meeting->id));

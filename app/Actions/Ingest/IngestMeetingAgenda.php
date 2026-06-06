@@ -2,6 +2,7 @@
 
 namespace App\Actions\Ingest;
 
+use App\Actions\Logging\RecordProcessingEvent;
 use App\Jobs\IngestAgendaMediaObjectsJob;
 use App\Models\AgendaItem;
 use App\Models\Meeting;
@@ -12,7 +13,7 @@ use Illuminate\Support\Facades\Log;
 
 class IngestMeetingAgenda
 {
-    public function __construct(private OriClient $client) {}
+    public function __construct(private OriClient $client, private RecordProcessingEvent $log) {}
 
     public function handle(Meeting $meeting): void
     {
@@ -74,5 +75,12 @@ class IngestMeetingAgenda
         }
 
         $meeting->update(['agenda_ingested_at' => now()]);
+
+        $this->log->handle(
+            $meeting,
+            'agenda',
+            'success',
+            count($sources).' agendapunten opgehaald, '.count($changedIds).' gewijzigd',
+        );
     }
 }

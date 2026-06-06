@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Actions\Logging\RecordProcessingEvent;
 use App\Actions\Summaries\DispatchMeetingSummariesIfReady;
 use App\Actions\Videos\FetchMeetingTranscript;
 use App\Actions\Videos\FindMeetingVideo;
@@ -25,6 +26,7 @@ class ProcessMeetingVideoJob implements ShouldQueue
         FindMeetingVideo $find,
         FetchMeetingTranscript $fetch,
         DispatchMeetingSummariesIfReady $dispatchSummaries,
+        RecordProcessingEvent $log,
     ): void {
         $meeting = Meeting::with('video')->findOrFail($this->meetingId);
         $video = $meeting->video;
@@ -43,6 +45,7 @@ class ProcessMeetingVideoJob implements ShouldQueue
 
         // Wacht op menselijke bevestiging; mogelijk is de wachttijd verstreken → gate.
         if ($video?->status === VideoStatus::NeedsConfirmation) {
+            $log->handle($meeting, 'video_match', 'warning', 'Video wacht op handmatige bevestiging');
             $dispatchSummaries->handle($meeting);
 
             return;
@@ -50,6 +53,7 @@ class ProcessMeetingVideoJob implements ShouldQueue
 
         // Transcript definitief opgegeven (attempt-limiet) → gate (PDF-only indien klaar).
         if ($video?->status === VideoStatus::Failed && $video->transcript_attempts >= $maxAttempts) {
+            $log->handle($meeting, 'video_match', 'warning', 'Transcript definitief opgegeven na '.$video->transcript_attempts.' pogingen');
             $dispatchSummaries->handle($meeting);
 
             return;
@@ -58,12 +62,14 @@ class ProcessMeetingVideoJob implements ShouldQueue
         // Nog geen bruikbare match (geen video / not_found / pending) → zoeken.
         $matched = $find->handle($meeting);
         if ($matched?->status === VideoStatus::Matched) {
+            $log->handle($meeting, 'video_match', 'success', "YouTube-video gematcht: {$matched->youtube_video_id}");
             $fetch->handle($matched);
 
             return;
         }
 
         // Geen match → mogelijk wachttijd verstreken → gate (PDF-only indien klaar).
+        $log->handle($meeting, 'video_match', 'info', 'Geen YouTube-video gevonden');
         $dispatchSummaries->handle($meeting);
     }
 

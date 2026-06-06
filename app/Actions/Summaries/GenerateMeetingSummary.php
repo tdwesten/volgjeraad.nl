@@ -2,6 +2,7 @@
 
 namespace App\Actions\Summaries;
 
+use App\Actions\Logging\RecordProcessingEvent;
 use App\Ai\Agents\MeetingSummaryAgent;
 use App\Enums\SummaryLevel;
 use App\Enums\SummaryStatus;
@@ -20,6 +21,7 @@ class GenerateMeetingSummary
         private CheckMeetingCost $checkMeetingCost,
         private EstimateCost $estimateCost,
         private RecordAiUsage $recordAiUsage,
+        private RecordProcessingEvent $log,
     ) {}
 
     public function handle(Meeting $meeting, SummaryLevel $level): ?Summary
@@ -133,6 +135,8 @@ class GenerateMeetingSummary
                 0, 0, 0, 'capped',
             );
 
+            $this->log->handle($meeting, 'summarize', 'warning', "Samenvatting [{$level->value}] overgeslagen: kostenplafond bereikt");
+
             return null;
         }
 
@@ -177,6 +181,8 @@ class GenerateMeetingSummary
                 $inputTokens, $outputTokens, $costCents, 'ok',
             );
 
+            $this->log->handle($meeting, 'summarize', 'success', "Samenvatting [{$level->value}] gegenereerd (confidence: {$summary->confidence}%)");
+
             return $summary;
         } catch (Throwable $e) {
             Log::warning('meeting_summary failed', [
@@ -192,6 +198,8 @@ class GenerateMeetingSummary
                 0, 0, 0, 'failed',
                 ['error' => $e->getMessage(), 'class' => get_class($e)],
             );
+
+            $this->log->handle($meeting, 'summarize', 'error', "Samenvatting [{$level->value}] mislukt: {$e->getMessage()}");
 
             return null;
         }

@@ -2,6 +2,7 @@
 
 namespace App\Actions\Newsletters;
 
+use App\Actions\Logging\RecordProcessingEvent;
 use App\Enums\NewsletterStatus;
 use App\Mail\ReviewReadyMail;
 use App\Models\Meeting;
@@ -12,6 +13,8 @@ use Illuminate\Support\Facades\Mail;
 
 class ComposeNewsletter
 {
+    public function __construct(private RecordProcessingEvent $log) {}
+
     public function handle(Meeting $meeting): Newsletter
     {
         $subject = $meeting->name.' — '.($meeting->starts_at?->format('d-m-Y') ?? '');
@@ -42,6 +45,9 @@ class ComposeNewsletter
         }
 
         $newsletter->summaries()->sync($positionMap);
+
+        $action = $newsletter->wasRecentlyCreated ? 'aangemaakt' : 'bijgewerkt';
+        $this->log->handle($meeting, 'newsletter', 'success', "Newsletter-concept {$action}");
 
         if ($newsletter->wasRecentlyCreated) {
             $this->notifyAdmins($meeting);

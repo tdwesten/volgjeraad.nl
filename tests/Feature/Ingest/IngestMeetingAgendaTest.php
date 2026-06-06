@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\Ingest\IngestMeetingAgenda;
+use App\Actions\Logging\RecordProcessingEvent;
 use App\Enums\IngestMode;
 use App\Enums\MeetingType;
 use App\Jobs\IngestAgendaMediaObjectsJob;
@@ -55,7 +56,7 @@ test('extracts agenda ids from @list shape and upserts agenda items', function (
     $client = Mockery::mock(OriClient::class);
     $client->shouldReceive('fetchByIds')->once()->andReturn($itemSources);
 
-    $action = new IngestMeetingAgenda($client);
+    $action = new IngestMeetingAgenda($client, app(RecordProcessingEvent::class));
     $action->handle($meeting);
 
     expect(AgendaItem::count())->toBe(2);
@@ -87,7 +88,7 @@ test('dispatches media objects job only for changed items on re-run', function (
     $client = Mockery::mock(OriClient::class);
     $client->shouldReceive('fetchByIds')->once()->andReturn(['agenda-item-1' => $source]);
 
-    $action = new IngestMeetingAgenda($client);
+    $action = new IngestMeetingAgenda($client, app(RecordProcessingEvent::class));
     $action->handle($meeting);
 
     expect(AgendaItem::count())->toBe(1);
@@ -103,7 +104,7 @@ test('empty @list marks agenda_ingested_at without fetching', function (): void 
     $client = Mockery::mock(OriClient::class);
     $client->shouldNotReceive('fetchByIds');
 
-    $action = new IngestMeetingAgenda($client);
+    $action = new IngestMeetingAgenda($client, app(RecordProcessingEvent::class));
     $action->handle($meeting);
 
     expect(AgendaItem::count())->toBe(0);

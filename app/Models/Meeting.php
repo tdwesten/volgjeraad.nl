@@ -102,6 +102,12 @@ class Meeting extends Model
         return $this->hasMany(AiUsageRecord::class);
     }
 
+    /** @return HasMany<ProcessingLog, $this> */
+    public function processingLogs(): HasMany
+    {
+        return $this->hasMany(ProcessingLog::class);
+    }
+
     public function shouldSummarize(): bool
     {
         return $this->ingest_mode === IngestMode::Summarize;

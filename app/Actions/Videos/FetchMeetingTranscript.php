@@ -2,6 +2,7 @@
 
 namespace App\Actions\Videos;
 
+use App\Actions\Logging\RecordProcessingEvent;
 use App\Actions\Summaries\DispatchMeetingSummariesIfReady;
 use App\Enums\VideoStatus;
 use App\Models\MeetingVideo;
@@ -14,6 +15,7 @@ class FetchMeetingTranscript
     public function __construct(
         private TranscriptProvider $transcriptProvider,
         private DispatchMeetingSummariesIfReady $dispatchMeetingSummaries,
+        private RecordProcessingEvent $log,
     ) {}
 
     public function handle(MeetingVideo $video): void
@@ -36,6 +38,9 @@ class FetchMeetingTranscript
                 'transcript_attempts' => $video->transcript_attempts + 1,
                 'last_attempt_at' => now(),
             ]);
+
+            $this->log->handle($video->meeting, 'transcript', 'error', "Transcript ophalen mislukt: {$e->getMessage()}");
+
             // Mogelijk definitief opgegeven (attempt-limiet) → laat de gate beslissen.
             $this->dispatchMeetingSummaries->handle($video->meeting);
 
@@ -49,6 +54,9 @@ class FetchMeetingTranscript
                 'transcript_attempts' => $video->transcript_attempts + 1,
                 'last_attempt_at' => now(),
             ]);
+
+            $this->log->handle($video->meeting, 'transcript', 'warning', 'Transcript leeg ontvangen');
+
             $this->dispatchMeetingSummaries->handle($video->meeting);
 
             return;
@@ -63,6 +71,8 @@ class FetchMeetingTranscript
             'transcript_attempts' => $video->transcript_attempts + 1,
             'last_attempt_at' => now(),
         ]);
+
+        $this->log->handle($video->meeting, 'transcript', 'success', "Transcript opgehaald via {$result->source}");
 
         // Transcript binnen → resolutie klaar → meeting-samenvattingen (mét transcript).
         $this->dispatchMeetingSummaries->handle($video->meeting);

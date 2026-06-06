@@ -27,11 +27,20 @@ interface Newsletter {
     status: string;
 }
 
+interface ProcessingLogItem {
+    id: number;
+    step: string;
+    status: string;
+    message: string;
+    created_at: string;
+}
+
 interface Props {
     meeting: Meeting;
-    newsletter: Newsletter;
+    newsletter: Newsletter | null;
     standardSummary: SummaryItem | null;
     simpleSummary: SummaryItem | null;
+    logs: ProcessingLogItem[];
 }
 
 function SummaryCard({
@@ -98,11 +107,56 @@ function SummaryCard({
     );
 }
 
-export default function ReviewShow({ meeting, newsletter, standardSummary, simpleSummary }: Props): JSX.Element {
+const statusStyles: Record<string, string> = {
+    info: 'border-blue-200 bg-blue-50 text-blue-700',
+    success: 'border-green-200 bg-green-50 text-green-700',
+    warning: 'border-yellow-200 bg-yellow-50 text-yellow-700',
+    error: 'border-red-200 bg-red-50 text-red-700',
+};
+
+const statusDotColors: Record<string, string> = {
+    info: 'bg-blue-400',
+    success: 'bg-green-500',
+    warning: 'bg-yellow-400',
+    error: 'bg-red-500',
+};
+
+function ProcessingTimeline({ logs }: { logs: ProcessingLogItem[] }): JSX.Element {
+    if (logs.length === 0) {
+        return <p className="text-sm text-muted-foreground">Geen verwerkingslogboek beschikbaar.</p>;
+    }
+
+    return (
+        <ol className="space-y-2">
+            {logs.map((log) => (
+                <li key={log.id} className={`flex gap-3 rounded-md border px-3 py-2 text-sm ${statusStyles[log.status] ?? statusStyles.info}`}>
+                    <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${statusDotColors[log.status] ?? statusDotColors.info}`} />
+                    <div className="min-w-0 flex-1">
+                        <span className="font-mono text-xs opacity-60">[{log.step}]</span>{' '}
+                        <span>{log.message}</span>
+                    </div>
+                    <time className="shrink-0 text-xs opacity-60" dateTime={log.created_at}>
+                        {new Date(log.created_at).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}
+                    </time>
+                </li>
+            ))}
+        </ol>
+    );
+}
+
+export default function ReviewShow({ meeting, newsletter, standardSummary, simpleSummary, logs }: Props): JSX.Element {
     const { flash } = usePage<PageProps>().props;
+    const { post: postRegenerate, processing: regenerating } = useForm({});
 
     const approve = (): void => {
         router.post(`/admin/review/${meeting.id}/approve`);
+    };
+
+    const handleRegenerate = (): void => {
+        if (!confirm('Weet je zeker dat je deze vergadering opnieuw wil verwerken? Bestaande samenvattingen en het nieuwsbrief-concept worden verwijderd.')) {
+            return;
+        }
+        postRegenerate(`/admin/review/${meeting.id}/regenerate`);
     };
 
     const hasSummaries = standardSummary !== null || simpleSummary !== null;
@@ -129,9 +183,16 @@ export default function ReviewShow({ meeting, newsletter, standardSummary, simpl
                             </p>
                         )}
                     </div>
-                    <Button onClick={approve} disabled={newsletter.status !== 'draft'}>
-                        {newsletter.status === 'draft' ? 'Goedkeuren & versturen' : 'Verstuurd'}
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button variant="outline" onClick={handleRegenerate} disabled={regenerating}>
+                            {regenerating ? 'Bezig...' : 'Opnieuw verwerken'}
+                        </Button>
+                        {newsletter && (
+                            <Button onClick={approve} disabled={newsletter.status !== 'draft'}>
+                                {newsletter.status === 'draft' ? 'Goedkeuren & versturen' : 'Verstuurd'}
+                            </Button>
+                        )}
+                    </div>
                 </div>
 
                 {flash.success && (
@@ -160,6 +221,11 @@ export default function ReviewShow({ meeting, newsletter, standardSummary, simpl
                 ) : (
                     <p className="text-muted-foreground">Geen samenvattingen beschikbaar.</p>
                 )}
+
+                <div>
+                    <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Verwerkingslogboek</h2>
+                    <ProcessingTimeline logs={logs} />
+                </div>
             </div>
         </AdminLayout>
     );

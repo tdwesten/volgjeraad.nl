@@ -20,6 +20,7 @@ Route::middleware(['auth', 'is_admin'])->prefix('admin')->name('admin.')->group(
     Route::get('/review/{meeting}', [ReviewController::class, 'show'])->name('review.show');
     Route::patch('/summary/{summary}', [ReviewController::class, 'update'])->name('review.update');
     Route::post('/review/{meeting}/approve', [ReviewController::class, 'approve'])->name('review.approve');
+    Route::post('/review/{meeting}/regenerate', [ReviewController::class, 'regenerate'])->name('review.regenerate');
     Route::get('/subscribers/export', [SubscriberController::class, 'export'])->name('subscribers.export');
     Route::get('/subscribers', [SubscriberController::class, 'index'])->name('subscribers.index');
     Route::delete('/subscribers/{subscriber}', [SubscriberController::class, 'destroy'])->name('subscribers.destroy');
