@@ -1,6 +1,8 @@
 <?php
 
 use App\Jobs\IngestMeetingAgendaJob;
+use App\Models\AgendaItem;
+use App\Models\MediaObject;
 use App\Models\Meeting;
 use App\Models\Municipality;
 use App\Models\Newsletter;
@@ -32,12 +34,19 @@ test('admin can regenerate a meeting and summaries are deleted', function (): vo
         'meeting_id' => $meeting->id,
     ]);
 
+    // Agendapunt + media: regenerate moet deze verwijderen (cascade), niet
+    // de NOT NULL raw_payload_hash op null zetten.
+    $agendaItem = AgendaItem::factory()->create(['meeting_id' => $meeting->id]);
+    MediaObject::factory()->create(['agenda_item_id' => $agendaItem->id]);
+
     $this->actingAs($admin)
         ->post("/admin/review/{$meeting->id}/regenerate")
         ->assertRedirect('/admin/review')
         ->assertSessionHas('success', 'Vergadering wordt opnieuw verwerkt.');
 
     expect($meeting->fresh()->summaries()->count())->toBe(0);
+    expect($meeting->fresh()->agendaItems()->count())->toBe(0);
+    expect(MediaObject::where('agenda_item_id', $agendaItem->id)->exists())->toBeFalse();
     expect(Newsletter::where('meeting_id', $meeting->id)->exists())->toBeFalse();
     expect($meeting->fresh()->summarized_at)->toBeNull();
     expect($meeting->fresh()->agenda_ingested_at)->toBeNull();

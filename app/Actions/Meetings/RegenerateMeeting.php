@@ -24,12 +24,10 @@ class RegenerateMeeting
             'agenda_ingested_at' => null,
         ]);
 
-        // Invalidate agenda item hashes so IngestMeetingAgenda treats them as changed
-        // and re-dispatches IngestAgendaMediaObjectsJob for each item
-        $meeting->agendaItems()->update([
-            'raw_payload_hash' => null,
-            'attachments_fetched_at' => null,
-        ]);
+        // Verwijder de agendapunten (cascade verwijdert media_objects) zodat
+        // IngestMeetingAgenda ze vers opnieuw ophaalt, de media opnieuw fetcht
+        // en de samenvatting opnieuw laat genereren.
+        $meeting->agendaItems()->delete();
 
         $this->log->handle($meeting, 'regenerate', 'info', 'Handmatig opnieuw verwerken gestart');
 
