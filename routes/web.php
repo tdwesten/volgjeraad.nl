@@ -2,6 +2,7 @@
 
 // Item 11/12 — publiek
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\MunicipalityOverviewController;
 use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Controllers\Admin\SubscriberController;
 use App\Http\Controllers\Admin\VideoReviewController;
@@ -26,6 +27,8 @@ Route::middleware(['auth', 'is_admin'])->prefix('admin')->name('admin.')->group(
     Route::delete('/subscribers/{subscriber}', [SubscriberController::class, 'destroy'])->name('subscribers.destroy');
     Route::get('/videos', [VideoReviewController::class, 'index'])->name('videos.index');
     Route::post('/videos/{video}/confirm', [VideoReviewController::class, 'confirm'])->name('videos.confirm');
+    Route::get('/municipalities', [MunicipalityOverviewController::class, 'index'])->name('municipalities.index');
+    Route::get('/municipalities/{municipality}', [MunicipalityOverviewController::class, 'show'])->name('municipalities.show');
 });
 
 Route::get('/', LandingController::class)->name('home');

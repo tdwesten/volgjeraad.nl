@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\IngestMode;
 use App\Enums\MeetingType;
+use App\Enums\SummaryStatus;
 use App\Enums\VideoStatus;
 use Database\Factories\MeetingFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -111,6 +112,31 @@ class Meeting extends Model
     public function shouldSummarize(): bool
     {
         return $this->ingest_mode === IngestMode::Summarize;
+    }
+
+    public function summaryStatusLabel(): string
+    {
+        $summaries = $this->relationLoaded('summaries')
+            ? $this->summaries
+            : $this->summaries()->get();
+
+        if ($summaries->isEmpty()) {
+            if ($this->type === MeetingType::Council && ! $this->transcriptResolved()) {
+                return 'Wacht op verwerking';
+            }
+
+            return 'Geen';
+        }
+
+        if ($summaries->contains(fn (Summary $s): bool => $s->status === SummaryStatus::Published)) {
+            return 'Gepubliceerd';
+        }
+
+        if ($summaries->contains(fn (Summary $s): bool => $s->status === SummaryStatus::Approved)) {
+            return 'Goedgekeurd';
+        }
+
+        return 'Concept';
     }
 
     /** @param Builder<Meeting> $query */
