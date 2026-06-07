@@ -24,8 +24,6 @@ class MunicipalityRequestController extends Controller
         MunicipalityRequest::create([
             'municipality' => $name,
             'email' => $request->validated('email'),
-            'ip' => $request->ip(),
-            'user_agent' => $request->userAgent(),
         ]);
 
         // Verse mailable per ontvanger zodat de queued instance niet hergebruikt

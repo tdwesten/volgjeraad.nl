@@ -15,8 +15,6 @@ return new class extends Migration
             $table->id();
             $table->string('municipality');
             $table->string('email')->nullable();
-            $table->string('ip', 45)->nullable();
-            $table->string('user_agent')->nullable();
             $table->timestamps();
 
             $table->index('created_at');

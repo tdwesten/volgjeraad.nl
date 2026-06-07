@@ -15,8 +15,6 @@ class MunicipalityRequestFactory extends Factory
         return [
             'municipality' => fake()->city(),
             'email' => fake()->safeEmail(),
-            'ip' => fake()->ipv4(),
-            'user_agent' => fake()->userAgent(),
         ];
     }
 }
