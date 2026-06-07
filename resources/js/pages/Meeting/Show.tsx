@@ -127,26 +127,65 @@ export default function MeetingShow({ municipality, meeting, agendaItems, video 
                                     <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
                                 </span>
                             </summary>
-                            <div className="space-y-2 border-t border-border px-3 py-3">
+                            <div className="space-y-3 border-t border-border px-3 py-3">
                                 <p>
-                                    Deze samenvatting is automatisch opgesteld door een AI-taalmodel. Als bron zijn de officiële
-                                    documenten van deze vergadering gebruikt — je vindt ze onderaan deze pagina onder{' '}
-                                    <strong>Bronnen</strong>.
+                                    Deze samenvatting is automatisch gemaakt op basis van de officiële stukken van deze
+                                    vergadering. Zo gaat dat stap voor stap:
                                 </p>
+                                <ol className="list-decimal space-y-1.5 pl-5">
+                                    <li>
+                                        <strong>Stukken ophalen.</strong> We halen de officiële documenten van deze vergadering op —
+                                        de agenda, de besluitenlijst en de raadsstukken (pdf&apos;s) — uit het landelijke systeem{' '}
+                                        <em>Open Raadsinformatie</em>.
+                                    </li>
+                                    <li>
+                                        <strong>Video en transcript.</strong> Is er een video-opname van de vergadering, dan zoeken
+                                        we die erbij en zetten we het gesproken woord automatisch om in tekst (een <em>transcript</em>).
+                                        Zo wordt ook het debat zelf meegenomen, niet alleen de papieren stukken.
+                                    </li>
+                                    <li>
+                                        <strong>Samenvatten.</strong> Een AI-taalmodel leest alle stukken en het transcript en schrijft
+                                        daar een samenvatting van: een <strong>standaard</strong> versie en een{' '}
+                                        <strong>eenvoudige (B1)</strong> versie in begrijpelijke taal.
+                                    </li>
+                                    <li>
+                                        <strong>Controle door een mens.</strong> Een redacteur leest het concept na, kan het aanpassen
+                                        en keurt het pas daarna goed. Wat je hier leest, is dus door een mens gecontroleerd.
+                                    </li>
+                                </ol>
+                                <p>De tools die we hiervoor gebruiken:</p>
+                                <ul className="list-disc space-y-1.5 pl-5">
+                                    <li>
+                                        <strong>Open Raadsinformatie</strong> — de landelijke, openbare bron met de officiële
+                                        vergaderstukken.
+                                    </li>
+                                    <li>
+                                        <strong>YouTube</strong> — voor de video-opname van de vergadering.
+                                    </li>
+                                    <li>
+                                        <strong>Supadata</strong> — zet het gesproken woord uit de video om in tekst.
+                                    </li>
+                                    <li>
+                                        <strong>OpenAI</strong> — het AI-taalmodel dat de samenvatting schrijft.
+                                    </li>
+                                    <li>
+                                        <strong>GitHub</strong> — alle code en de gebruikte AI-instructies (prompts) zijn openbaar.{' '}
+                                        <strong>Volg je raad</strong> is open source en{' '}
+                                        <a
+                                            href="https://github.com/tdwesten/volgjeraad.nl"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-primary hover:underline"
+                                        >
+                                            in te zien op GitHub
+                                        </a>
+                                        .
+                                    </li>
+                                </ul>
                                 <p>
-                                    <strong>Volg je raad</strong> is open source. De gebruikte prompts en de volledige verwerking zijn openbaar in te
-                                    zien op{' '}
-                                    <a
-                                        href="https://github.com/tdwesten/volgjeraad.nl"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-primary hover:underline"
-                                    >
-                                        GitHub
-                                    </a>
-                                    .
+                                    AI kan fouten maken. Raadpleeg voor beslissingen altijd de officiële bronnen — je vindt ze
+                                    onderaan deze pagina onder <strong>Bronnen</strong>.
                                 </p>
-                                <p>AI kan fouten maken. Raadpleeg voor beslissingen altijd de officiële bronnen.</p>
                             </div>
                         </details>
                         <div className="space-y-2">
