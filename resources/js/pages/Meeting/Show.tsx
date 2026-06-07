@@ -121,7 +121,11 @@ export default function MeetingShow({ municipality, meeting, agendaItems, video 
                                 <span className="flex-1">
                                     Automatisch samengevat door AI. Controleer altijd de bronnen voor officiële informatie.
                                 </span>
-                                <ChevronDown className="mt-0.5 h-4 w-4 shrink-0 transition-transform group-open:rotate-180" />
+                                <span className="mt-0.5 flex shrink-0 items-center gap-1 whitespace-nowrap font-medium text-foreground">
+                                    <span className="group-open:hidden">Meer informatie</span>
+                                    <span className="hidden group-open:inline">Minder informatie</span>
+                                    <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
+                                </span>
                             </summary>
                             <div className="space-y-2 border-t border-border px-3 py-3">
                                 <p>
