@@ -23,23 +23,25 @@ test('SummarizeMeetingJob dispatches ComposeNewsletterJob when all summary level
     $municipality = Municipality::factory()->create(['launch_date' => '2026-01-01']);
     $meeting = Meeting::factory()->create(['municipality_id' => $municipality->id]);
 
-    // Pre-create summary for Standard level so after Simple is done both exist
-    Summary::create([
-        'summarizable_type' => $meeting->getMorphClass(),
-        'summarizable_id' => $meeting->id,
-        'municipality_id' => $municipality->id,
-        'meeting_id' => $meeting->id,
-        'level' => SummaryLevel::Standard->value,
-        'language' => 'nl',
-        'source_hash' => 'abc',
-        'status' => 'draft',
-        'title' => 'Standard',
-        'body' => 'Body',
-        'input_tokens' => 0,
-        'output_tokens' => 0,
-        'prompt_version' => 'v2',
-        'model' => 'gpt-4o-mini',
-    ]);
+    // Pre-create alle niveaus behalve Simple, zodat na de Simple-job alle drie bestaan.
+    foreach ([SummaryLevel::Standard, SummaryLevel::Plain] as $level) {
+        Summary::create([
+            'summarizable_type' => $meeting->getMorphClass(),
+            'summarizable_id' => $meeting->id,
+            'municipality_id' => $municipality->id,
+            'meeting_id' => $meeting->id,
+            'level' => $level->value,
+            'language' => 'nl',
+            'source_hash' => 'abc-'.$level->value,
+            'status' => 'draft',
+            'title' => $level->label(),
+            'body' => 'Body',
+            'input_tokens' => 0,
+            'output_tokens' => 0,
+            'prompt_version' => 'v2',
+            'model' => 'gpt-4o-mini',
+        ]);
+    }
 
     $action = app(GenerateMeetingSummary::class);
     $job = new SummarizeMeetingJob($meeting->id, SummaryLevel::Simple);

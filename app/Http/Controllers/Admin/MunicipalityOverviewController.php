@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\SummaryLevel;
 use App\Enums\SummaryStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Meeting;
@@ -21,7 +22,8 @@ class MunicipalityOverviewController extends Controller
                 'published_summaries_count' => Summary::query()
                     ->selectRaw('count(*)')
                     ->whereColumn('municipality_id', 'municipalities.id')
-                    ->where('status', SummaryStatus::Published),
+                    ->where('status', SummaryStatus::Published)
+                    ->where('level', '!=', SummaryLevel::Plain->value),
             ])
             ->orderBy('name')
             ->get()
@@ -54,6 +56,8 @@ class MunicipalityOverviewController extends Controller
                 'ingest_mode' => $meeting->ingest_mode->value,
                 'summary_status' => $meeting->summaryStatusLabel(),
                 'is_summarizable' => $meeting->shouldSummarize(),
+                'teaser' => $meeting->summaries
+                    ->firstWhere('level', SummaryLevel::Plain)?->body,
             ]);
 
         return Inertia::render('admin/Municipalities/Show', [

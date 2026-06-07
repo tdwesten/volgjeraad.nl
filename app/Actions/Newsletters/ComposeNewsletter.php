@@ -4,6 +4,7 @@ namespace App\Actions\Newsletters;
 
 use App\Actions\Logging\RecordProcessingEvent;
 use App\Enums\NewsletterStatus;
+use App\Enums\SummaryLevel;
 use App\Mail\ReviewReadyMail;
 use App\Models\Meeting;
 use App\Models\Newsletter;
@@ -30,9 +31,11 @@ class ComposeNewsletter
             ],
         );
 
-        // Attach the two meeting-level summaries (standard at position 1, simple at position 2).
+        // Attach the two long-form meeting summaries (standard at position 1, simple at
+        // position 2). De korte plain-text teaser is voor overzichten, niet voor de mail.
         $summaries = Summary::where('meeting_id', $meeting->id)
             ->where('summarizable_type', $meeting->getMorphClass())
+            ->whereIn('level', [SummaryLevel::Standard->value, SummaryLevel::Simple->value])
             ->get();
 
         $positionMap = [];

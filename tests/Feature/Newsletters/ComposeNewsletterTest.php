@@ -51,6 +51,18 @@ test('composes one draft newsletter with both meeting-level summaries', function
     expect($newsletter->summaries()->count())->toBe(2); // standard + simple
 });
 
+test('excludes the plain teaser summary from the newsletter', function (): void {
+    Mail::fake();
+    $meeting = meetingWithMeetingSummaries();
+    $newsletter = app(ComposeNewsletter::class)->handle($meeting);
+
+    $levels = $newsletter->summaries()->get()->map(fn (Summary $s) => $s->level->value)->all();
+
+    expect($levels)->toContain('standard')
+        ->and($levels)->toContain('simple')
+        ->and($levels)->not->toContain('plain');
+});
+
 test('is idempotent — second call updates existing newsletter', function (): void {
     Mail::fake();
     $meeting = meetingWithMeetingSummaries();

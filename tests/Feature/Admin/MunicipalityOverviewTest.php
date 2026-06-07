@@ -2,6 +2,7 @@
 
 use App\Enums\IngestMode;
 use App\Enums\MeetingType;
+use App\Enums\SummaryLevel;
 use App\Enums\SummaryStatus;
 use App\Models\Meeting;
 use App\Models\Municipality;
@@ -128,6 +129,31 @@ test('show returns correct summary status for draft summary', function (): void 
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->where('meetings.0.summary_status', 'Concept')
+        );
+});
+
+test('show exposes the plain teaser per meeting', function (): void {
+    $admin = User::factory()->create(['is_admin' => true]);
+    $municipality = Municipality::factory()->create();
+    $meeting = Meeting::factory()->create([
+        'municipality_id' => $municipality->id,
+        'ingest_mode' => IngestMode::Summarize->value,
+    ]);
+    Summary::factory()->published()->create([
+        'summarizable_type' => Meeting::class,
+        'summarizable_id' => $meeting->id,
+        'municipality_id' => $municipality->id,
+        'meeting_id' => $meeting->id,
+        'level' => SummaryLevel::Plain->value,
+        'body' => 'Korte teaser over deze vergadering.',
+    ]);
+
+    $this->withoutVite()
+        ->actingAs($admin)
+        ->get("/admin/municipalities/{$municipality->id}")
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('meetings.0.teaser', 'Korte teaser over deze vergadering.')
         );
 });
 

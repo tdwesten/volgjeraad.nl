@@ -19,6 +19,7 @@ interface MeetingItem {
     ingest_mode: 'summarize' | 'metadata_only';
     summary_status: string;
     is_summarizable: boolean;
+    teaser: string | null;
 }
 
 interface Props {
@@ -108,8 +109,13 @@ export default function MunicipalitiesShow({ municipality, meetings }: Props): J
                         <TableBody>
                             {meetings.map((meeting) => (
                                 <TableRow key={meeting.id}>
-                                    <TableCell className="font-medium">
+                                    <TableCell className="max-w-md font-medium">
                                         {meeting.name ?? <span className="text-muted-foreground italic">Naamloos</span>}
+                                        {meeting.teaser && (
+                                            <p className="mt-1 line-clamp-2 text-sm font-normal text-muted-foreground">
+                                                {meeting.teaser}
+                                            </p>
+                                        )}
                                     </TableCell>
                                     <TableCell className="text-sm text-muted-foreground">
                                         {meetingTypeLabel[meeting.type]}
