@@ -25,7 +25,9 @@ class SubscriptionController extends Controller
             $request->userAgent(),
         );
 
-        return back()->with('success', 'Bedankt! Controleer je e-mail om je aanmelding te bevestigen.');
+        // Geen flash-bericht: het NewsletterSignup-component toont de bevestiging zelf
+        // (inline), zodat dit op elke pagina werkt en niet dubbelt met de pagina-flash.
+        return back();
     }
 
     public function confirm(string $token, ConfirmSubscription $action): RedirectResponse
