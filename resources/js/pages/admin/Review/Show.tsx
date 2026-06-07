@@ -4,7 +4,7 @@ import { Textarea } from '@/components/ui/textarea';
 import SummaryCard from '@/components/SummaryCard';
 import { Link, useForm, router, usePage, usePoll } from '@inertiajs/react';
 import { type PageProps } from '@/types';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Clock, RefreshCw, Send, Tv, XCircle } from 'lucide-react';
 
 interface SummaryItem {
@@ -142,9 +142,22 @@ export default function ReviewShow({ meeting, newsletter, standardSummary, simpl
     const { flash } = usePage<PageProps>().props;
     const { post: postRegenerate, processing: regenerating } = useForm({});
 
-    // Live status: ververs het verwerkingslogboek (en het resultaat) periodiek
-    // zodat de admin de pijplijn-status ziet meelopen zonder te herladen.
-    usePoll(4000, { only: ['logs', 'standardSummary', 'simpleSummary', 'newsletter'] });
+    // Live status: ververs logs + resultaat periodiek terwijl de verwerking
+    // loopt, en stop zodra die klaar is (= nieuwsbrief-concept aangemaakt).
+    const isProcessing = newsletter === null;
+    const { start, stop } = usePoll(
+        4000,
+        { only: ['logs', 'standardSummary', 'simpleSummary', 'newsletter'] },
+        { autoStart: false },
+    );
+
+    useEffect(() => {
+        if (isProcessing) {
+            start();
+        } else {
+            stop();
+        }
+    }, [isProcessing, start, stop]);
 
     const approve = (): void => {
         router.post(`/admin/review/${meeting.id}/approve`);
@@ -233,13 +246,15 @@ export default function ReviewShow({ meeting, newsletter, standardSummary, simpl
                 <div>
                     <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                         Verwerkingslogboek
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium normal-case text-muted-foreground">
-                            <span className="relative flex h-1.5 w-1.5">
-                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-75" />
-                                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-green-500" />
+                        {isProcessing && (
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium normal-case text-muted-foreground">
+                                <span className="relative flex h-1.5 w-1.5">
+                                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-75" />
+                                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-green-500" />
+                                </span>
+                                live
                             </span>
-                            live
-                        </span>
+                        )}
                     </h2>
                     <ProcessingTimeline logs={logs} />
                 </div>
