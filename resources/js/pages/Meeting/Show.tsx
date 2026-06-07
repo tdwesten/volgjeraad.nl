@@ -1,5 +1,6 @@
 import PublicLayout from '@/layouts/PublicLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import NewsletterSignup from '@/components/NewsletterSignup';
 import SummaryCard from '@/components/SummaryCard';
 import { Link } from '@inertiajs/react';
 import { ChevronDown, Clock, FileText, PlayCircle, Sparkles } from 'lucide-react';
@@ -76,8 +77,8 @@ export default function MeetingShow({ municipality, meeting, agendaItems, video 
             <div className="space-y-8">
                 <div className="space-y-1">
                     <p className="text-sm text-muted-foreground">
-                        <Link href="/" className="hover:underline">
-                            Volgjeraad
+                        <Link href="/" className="font-semibold hover:underline">
+                            Volg je raad
                         </Link>{' '}
                         &rsaquo;{' '}
                         <Link href={`/${municipality.slug}`} className="hover:underline">
@@ -129,7 +130,7 @@ export default function MeetingShow({ municipality, meeting, agendaItems, video 
                                     <strong>Bronnen</strong>.
                                 </p>
                                 <p>
-                                    Volgjeraad is open source. De gebruikte prompts en de volledige verwerking zijn openbaar in te
+                                    <strong>Volg je raad</strong> is open source. De gebruikte prompts en de volledige verwerking zijn openbaar in te
                                     zien op{' '}
                                     <a
                                         href="https://github.com/tdwesten/volgjeraad.nl"
@@ -176,6 +177,8 @@ export default function MeetingShow({ municipality, meeting, agendaItems, video 
                         Nog geen samenvatting beschikbaar voor deze vergadering.
                     </p>
                 )}
+
+                <NewsletterSignup municipalitySlug={municipality.slug} />
 
                 {video && (
                     <div id="video" className="space-y-2 scroll-mt-20">

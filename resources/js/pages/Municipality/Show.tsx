@@ -1,9 +1,7 @@
 import PublicLayout from '@/layouts/PublicLayout';
-import { Link, useForm, usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { type PageProps } from '@/types';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import NewsletterSignup from '@/components/NewsletterSignup';
 
 interface Summary {
     id: number;
@@ -30,40 +28,6 @@ interface Props {
     meetings: Meeting[];
 }
 
-function SubscribeForm({ municipalitySlug }: { municipalitySlug: string }): JSX.Element {
-    const { data, setData, post, processing, errors } = useForm({
-        email: '',
-        municipality_slug: municipalitySlug,
-        level: 'standard',
-    });
-
-    return (
-        <form
-            onSubmit={(e) => {
-                e.preventDefault();
-                post('/aanmelden');
-            }}
-            className="space-y-3"
-        >
-            <div className="space-y-1">
-                <Label htmlFor="email">E-mailadres</Label>
-                <Input
-                    id="email"
-                    type="email"
-                    value={data.email}
-                    onChange={(e) => setData('email', e.target.value)}
-                    placeholder="jouw@email.nl"
-                    required
-                />
-                {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
-            </div>
-            <Button type="submit" disabled={processing}>
-                Aanmelden
-            </Button>
-        </form>
-    );
-}
-
 export default function MunicipalityShow({ municipality, meetings }: Props): JSX.Element {
     const { flash } = usePage<PageProps>().props;
 
@@ -72,8 +36,8 @@ export default function MunicipalityShow({ municipality, meetings }: Props): JSX
             <div className="space-y-8">
                 <div className="space-y-1">
                     <p className="text-sm text-muted-foreground">
-                        <Link href="/" className="hover:underline">
-                            Volgjeraad
+                        <Link href="/" className="font-semibold hover:underline">
+                            Volg je raad
                         </Link>{' '}
                         &rsaquo; {municipality.name}
                     </p>
@@ -86,19 +50,16 @@ export default function MunicipalityShow({ municipality, meetings }: Props): JSX
                     </div>
                 )}
 
-                <div className="rounded-lg border border-border p-6">
-                    <h2 className="mb-4 text-lg font-semibold">Blijf op de hoogte</h2>
-                    <p className="mb-4 text-sm text-muted-foreground">
-                        Ontvang een e-mailsamenvatting na elke raadsvergadering.
-                    </p>
-                    <SubscribeForm municipalitySlug={municipality.slug} />
-                </div>
+                <NewsletterSignup municipalitySlug={municipality.slug} />
 
                 {meetings.length > 0 ? (
                     <div className="space-y-6">
                         <h2 className="text-lg font-semibold">Recente samenvattingen</h2>
                         {meetings.map((meeting) => {
+                            // Toon de korte plain-text teaser als die er is; anders de standaard-samenvatting.
+                            const teaser = meeting.summaries.find((s) => s.level === 'plain');
                             const standardSummary = meeting.summaries.find((s) => s.level === 'standard');
+                            const preview = teaser ?? standardSummary;
                             return (
                                 <div key={meeting.id} className="space-y-2 border-b border-border pb-6">
                                     <Link
@@ -116,9 +77,9 @@ export default function MunicipalityShow({ municipality, meetings }: Props): JSX
                                             })}
                                         </p>
                                     )}
-                                    {standardSummary && (
+                                    {preview && (
                                         <p className="line-clamp-3 text-sm text-muted-foreground">
-                                            {standardSummary.body}
+                                            {preview.body}
                                         </p>
                                     )}
                                     <Link
