@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Integrations\YouTube\Requests\SearchChannelVideosRequest;
+use App\Http\Integrations\YouTube\Requests\SearchRequest;
 use App\Http\Integrations\YouTube\YouTubeConnector;
 use App\Services\YouTube\YouTubeClient;
 use Carbon\CarbonImmutable;
@@ -84,4 +85,65 @@ test('searchChannel skips items without a videoId', function (): void {
 
     expect($candidates)->toHaveCount(1);
     expect($candidates[0]->videoId)->toBe('abc12345678');
+});
+
+test('search sends query + type and parses channel results', function (): void {
+    $mockClient = new MockClient([
+        SearchRequest::class => MockResponse::make([
+            'items' => [
+                [
+                    'id' => ['kind' => 'youtube#channel', 'channelId' => 'UC_brummen'],
+                    'snippet' => [
+                        'title' => 'Gemeente Brummen',
+                        'description' => 'Officieel kanaal van de gemeente Brummen.',
+                    ],
+                ],
+            ],
+        ], 200),
+    ]);
+
+    $connector = new YouTubeConnector;
+    $connector->withMockClient($mockClient);
+    $client = new YouTubeClient($connector);
+
+    $results = $client->search('gemeente Brummen raad');
+
+    expect($results)->toBe([[
+        'id' => 'UC_brummen',
+        'title' => 'Gemeente Brummen',
+        'description' => 'Officieel kanaal van de gemeente Brummen.',
+        'url' => 'https://www.youtube.com/channel/UC_brummen',
+    ]]);
+
+    $mockClient->assertSent(SearchRequest::class);
+    $query = $mockClient->getLastPendingRequest()->query()->all();
+    expect($query['q'])->toBe('gemeente Brummen raad');
+    expect($query['type'])->toBe('channel');
+    expect($query['part'])->toBe('snippet');
+    expect($query['maxResults'])->toBe(5);
+});
+
+test('search builds video urls and skips items without a usable id', function (): void {
+    $mockClient = new MockClient([
+        SearchRequest::class => MockResponse::make([
+            'items' => [
+                ['id' => ['kind' => 'youtube#video', 'videoId' => 'abc12345678'], 'snippet' => ['title' => 'Raad', 'description' => '']],
+                ['id' => ['kind' => 'youtube#playlist', 'playlistId' => 'PL123'], 'snippet' => ['title' => 'Playlist']],
+            ],
+        ], 200),
+    ]);
+
+    $connector = new YouTubeConnector;
+    $connector->withMockClient($mockClient);
+    $client = new YouTubeClient($connector);
+
+    $results = $client->search('Brummen raadsvergadering', 'video', 3);
+
+    expect($results)->toHaveCount(1);
+    expect($results[0]['id'])->toBe('abc12345678');
+    expect($results[0]['url'])->toBe('https://www.youtube.com/watch?v=abc12345678');
+
+    $query = $mockClient->getLastPendingRequest()->query()->all();
+    expect($query['type'])->toBe('video');
+    expect($query['maxResults'])->toBe(3);
 });

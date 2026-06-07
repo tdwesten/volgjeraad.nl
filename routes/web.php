@@ -30,7 +30,18 @@ Route::middleware(['auth', 'is_admin'])->prefix('admin')->name('admin.')->group(
     Route::get('/videos', [VideoReviewController::class, 'index'])->name('videos.index');
     Route::post('/videos/{video}/confirm', [VideoReviewController::class, 'confirm'])->name('videos.confirm');
     Route::get('/municipalities', [MunicipalityOverviewController::class, 'index'])->name('municipalities.index');
+    Route::get('/municipalities/create', [MunicipalityOverviewController::class, 'create'])->name('municipalities.create');
+    Route::post('/municipalities', [MunicipalityOverviewController::class, 'store'])->name('municipalities.store');
+    Route::post('/municipalities/validate-ori', [MunicipalityOverviewController::class, 'validateOri'])
+        ->middleware('throttle:30,1')
+        ->name('municipalities.validate-ori');
+    // Draait een AI-agent met internettoegang — kosten/tijd, dus strakker begrensd.
+    Route::post('/municipalities/find-stream', [MunicipalityOverviewController::class, 'findStream'])
+        ->middleware('throttle:8,1')
+        ->name('municipalities.find-stream');
     Route::get('/municipalities/{municipality}', [MunicipalityOverviewController::class, 'show'])->name('municipalities.show');
+    Route::patch('/municipalities/{municipality}/active', [MunicipalityOverviewController::class, 'toggleActive'])->name('municipalities.toggle-active');
+    Route::post('/municipalities/{municipality}/channel', [MunicipalityOverviewController::class, 'updateChannel'])->name('municipalities.channel');
     Route::get('/gemeente-aanvragen', [AdminMunicipalityRequestController::class, 'index'])->name('municipality-requests.index');
 });
 

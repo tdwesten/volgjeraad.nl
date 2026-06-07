@@ -9,10 +9,23 @@ use App\Models\Municipality;
 use App\Models\Subscriber;
 use App\Models\Summary;
 use App\Models\User;
+use App\Services\Ori\OriClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 
 uses(RefreshDatabase::class);
+
+beforeEach(function (): void {
+    // The municipality show page probes ORI; keep tests network-free.
+    $this->mock(OriClient::class, function ($mock): void {
+        $mock->shouldReceive('probeIndex')->andReturn([
+            'exists' => true,
+            'meeting_count' => 0,
+            'latest_meeting' => null,
+            'error' => null,
+        ]);
+    });
+});
 
 test('non-admin gets 403 on municipalities index', function (): void {
     $user = User::factory()->create(['is_admin' => false]);
