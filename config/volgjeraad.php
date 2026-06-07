@@ -61,13 +61,29 @@ return [
     'backfill_recent_meetings' => 2,
 
     /*
-     * Cost in cents per 1M tokens: [input_cents, output_cents].
-     * Prices verified 2026-06-05 (OpenAI pricing page; fallback gpt-4o-mini).
-     * gpt-4o-mini:  $0.15/1M input, $0.60/1M output  → 15 / 60 cents
+     * Dynamische prijslijst: OpenAI heeft geen officiële prijs-API, dus halen we
+     * de community-onderhouden LiteLLM-prijslijst op (input/output $ per token) en
+     * cachen die. Bij een mislukte fetch of een ontbrekend model valt EstimateCost
+     * terug op de statische `model_prices` hieronder. Zet `enabled` op false om
+     * volledig statisch te draaien (tests doen dit via env).
+     */
+    'model_prices_remote' => [
+        'enabled' => env('VOLGJERAAD_MODEL_PRICES_REMOTE', true),
+        'url' => env(
+            'VOLGJERAAD_MODEL_PRICES_URL',
+            'https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json',
+        ),
+        'cache_ttl_hours' => 168,
+    ],
+
+    /*
+     * Statische fallback in cents per 1M tokens: [input_cents, output_cents].
+     * Gebruikt wanneer de remote-prijslijst uit staat, faalt of het model mist.
+     * Waarden afgestemd op LiteLLM (2026-06-07).
      */
     'model_prices' => [
-        // gpt-5.4-mini: schatting — verifieer tegen de actuele OpenAI-prijspagina.
-        'gpt-5.4-mini' => [25, 200],
+        'gpt-5.4-mini' => [75, 450],
+        'gpt-5-mini' => [25, 200],
         'gpt-4o-mini' => [15, 60],
         'gpt-4o' => [250, 1000],
     ],
