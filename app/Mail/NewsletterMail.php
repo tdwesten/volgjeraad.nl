@@ -53,6 +53,7 @@ class NewsletterMail extends Mailable
                 'level' => $this->level,
                 'subscriber' => $this->subscriber,
                 'summaries' => $this->summaries,
+                'municipalityName' => $this->newsletter->municipality?->name ?? 'je gemeente',
                 'unsubscribeUrl' => route('subscription.unsubscribe', $this->subscriber->unsubscribe_token),
                 'webUrl' => route('newsletter.web', $this->newsletter->id),
                 'municipalityUrl' => $this->newsletter->municipality

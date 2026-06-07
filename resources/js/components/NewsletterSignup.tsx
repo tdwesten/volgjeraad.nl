@@ -5,7 +5,13 @@ import { useForm } from '@inertiajs/react';
 import { CheckCircle2 } from 'lucide-react';
 import { type FormEvent } from 'react';
 
-export default function NewsletterSignup({ municipalitySlug }: { municipalitySlug: string }): JSX.Element {
+export default function NewsletterSignup({
+    municipalitySlug,
+    municipalityName,
+}: {
+    municipalitySlug: string;
+    municipalityName: string;
+}): JSX.Element {
     const { data, setData, post, processing, errors, reset, wasSuccessful } = useForm({
         email: '',
         municipality_slug: municipalitySlug,
@@ -25,9 +31,9 @@ export default function NewsletterSignup({ municipalitySlug }: { municipalitySlu
 
     return (
         <div className="rounded-lg border border-border p-6">
-            <h2 className="mb-4 text-lg font-semibold">Blijf op de hoogte</h2>
+            <h2 className="mb-4 text-lg font-semibold">Blijf op de hoogte van {municipalityName}</h2>
             <p className="mb-4 text-sm text-muted-foreground">
-                Ontvang een e-mailsamenvatting na elke raadsvergadering.
+                Ontvang een e-mailsamenvatting na elke raadsvergadering van {municipalityName} in je inbox.
             </p>
 
             {wasSuccessful && (

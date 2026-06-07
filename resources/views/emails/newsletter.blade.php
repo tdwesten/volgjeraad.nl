@@ -7,6 +7,8 @@ Automatisch samengevat door AI. Controleer altijd de bronnen voor officiële inf
 
 # {{ $newsletter->subject }}
 
+Hieronder lees je de samenvatting van de laatste raadsvergadering van **{{ $municipalityName }}** — automatisch samengevat met AI en helder geschreven. Zo blijf je op de hoogte van wat er in jouw gemeenteraad speelt.
+
 @if($level->value === 'simple')
 *Eenvoudige versie (B1-niveau)*
 

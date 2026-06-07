@@ -221,7 +221,7 @@ export default function MeetingShow({ municipality, meeting, agendaItems, video 
                     </p>
                 )}
 
-                <NewsletterSignup municipalitySlug={municipality.slug} />
+                <NewsletterSignup municipalitySlug={municipality.slug} municipalityName={municipality.name} />
 
                 {video && (
                     <div id="video" className="space-y-2 scroll-mt-20">

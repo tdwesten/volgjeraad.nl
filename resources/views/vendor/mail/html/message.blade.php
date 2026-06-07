@@ -2,7 +2,7 @@
 {{-- Header --}}
 <x-slot:header>
 <x-mail::header :url="config('app.url')">
-{{ config('app.name') }}
+Volg je raad
 </x-mail::header>
 </x-slot:header>
 
@@ -23,7 +23,9 @@
 <x-mail::footer>
 *Deze e-mail is automatisch met AI gegenereerd.*
 
-[Open source](https://github.com/tdwesten/volgjeraad.nl) · Een tool van Thomas van der Westen — [codesmiths.nl](https://codesmiths.nl)
+Volg je raad — samenvattingen van gemeenteraadsvergaderingen
+
+Een [open source](https://github.com/tdwesten/volgjeraad.nl) tool gemaakt door Thomas van der Westen — [Codesmiths.nl](https://codesmiths.nl)
 </x-mail::footer>
 </x-slot:footer>
 </x-mail::layout>

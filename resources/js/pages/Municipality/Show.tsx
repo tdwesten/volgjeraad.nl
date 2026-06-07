@@ -50,7 +50,7 @@ export default function MunicipalityShow({ municipality, meetings }: Props): JSX
                     </div>
                 )}
 
-                <NewsletterSignup municipalitySlug={municipality.slug} />
+                <NewsletterSignup municipalitySlug={municipality.slug} municipalityName={municipality.name} />
 
                 {meetings.length > 0 ? (
                     <div className="space-y-6">
