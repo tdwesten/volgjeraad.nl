@@ -11,8 +11,8 @@ return [
     ],
 
     'ai' => [
-        'default_summary_model' => env('AI_SUMMARY_MODEL', 'gpt-4o-mini'),
-        'default_eval_model' => env('AI_EVAL_MODEL', 'gpt-4o-mini'),
+        'default_summary_model' => env('AI_SUMMARY_MODEL', 'gpt-5.5-mini'),
+        'default_eval_model' => env('AI_EVAL_MODEL', 'gpt-5.5-mini'),
         'prompt_version' => 'v2',
         'cost_cap_cents_per_meeting' => 100,
         'confidence_highlight_threshold' => 60,
@@ -66,6 +66,8 @@ return [
      * gpt-4o-mini:  $0.15/1M input, $0.60/1M output  → 15 / 60 cents
      */
     'model_prices' => [
+        // gpt-5.5-mini: schatting — verifieer tegen de actuele OpenAI-prijspagina.
+        'gpt-5.5-mini' => [25, 200],
         'gpt-4o-mini' => [15, 60],
         'gpt-4o' => [250, 1000],
     ],
