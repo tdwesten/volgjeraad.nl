@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\VideoReviewController;
 use App\Http\Controllers\Public\LandingController;
 use App\Http\Controllers\Public\MeetingController;
 use App\Http\Controllers\Public\MunicipalityController;
+use App\Http\Controllers\Public\MunicipalityRequestController;
 use App\Http\Controllers\Public\NewsletterWebController;
 use App\Http\Controllers\Public\SubscriptionController;
 use Illuminate\Support\Facades\Route;
@@ -36,6 +37,7 @@ Route::get('/', LandingController::class)->name('home');
 Route::get('/nieuwsbrief/{newsletter}', [NewsletterWebController::class, 'show'])->name('newsletter.web');
 
 Route::post('/aanmelden', [SubscriptionController::class, 'store'])->name('subscription.store');
+Route::post('/gemeente-aanvragen', [MunicipalityRequestController::class, 'store'])->name('municipality.request');
 Route::get('/bevestig/{token}', [SubscriptionController::class, 'confirm'])->name('subscription.confirm');
 Route::get('/uitschrijven/{token}', [SubscriptionController::class, 'unsubscribe'])->name('subscription.unsubscribe');
 
