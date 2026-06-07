@@ -64,7 +64,7 @@ export default function NewsletterWeb({ newsletter }: Props): JSX.Element {
                 )}
 
                 <p className="border-t border-border pt-6 text-xs text-muted-foreground">
-                    Dit is de webversie van de Volgjeraad nieuwsbrief voor {newsletter.municipality.name}. Automatisch
+                    Dit is de webversie van de <strong>Volg je raad</strong> nieuwsbrief voor {newsletter.municipality.name}. Automatisch
                     samengevat door AI — controleer altijd de officiële bronnen.
                 </p>
             </div>

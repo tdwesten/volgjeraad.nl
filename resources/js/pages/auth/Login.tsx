@@ -21,7 +21,7 @@ export default function Login({ errors }: Props): JSX.Element {
         <div className="flex min-h-screen items-center justify-center bg-background">
             <div className="w-full max-w-sm space-y-6 p-8">
                 <div className="space-y-1 text-center">
-                    <h1 className="text-2xl font-bold">Volgjeraad — Beheer</h1>
+                    <h1 className="text-2xl font-bold">Volg je raad — Beheer</h1>
                     <p className="text-sm text-muted-foreground">Log in om door te gaan</p>
                 </div>
 

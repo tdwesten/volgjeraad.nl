@@ -20,7 +20,7 @@ export default function AdminLayout({ children }: PropsWithChildren): JSX.Elemen
             <header className="border-b border-border">
                 <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
                     <div className="flex items-center gap-6">
-                        <span className="font-semibold">Volgjeraad — Beheer</span>
+                        <span className="font-semibold">Volg je raad — Beheer</span>
                         <nav className="flex items-center gap-1">
                             {navLinks.map((link) => (
                                 <Link

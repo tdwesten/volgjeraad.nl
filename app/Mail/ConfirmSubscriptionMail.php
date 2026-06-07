@@ -18,7 +18,7 @@ class ConfirmSubscriptionMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Bevestig je aanmelding voor Volgjeraad',
+            subject: 'Bevestig je aanmelding voor Volg je raad',
         );
     }
 

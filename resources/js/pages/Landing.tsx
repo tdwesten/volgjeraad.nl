@@ -16,7 +16,7 @@ export default function Landing({ municipalities }: Props): JSX.Element {
         <PublicLayout>
             <div className="space-y-8">
                 <div className="space-y-2">
-                    <h1 className="text-3xl font-bold">Volgjeraad</h1>
+                    <h1 className="text-3xl font-bold">Volg je raad</h1>
                     <p className="text-muted-foreground">
                         Volg wat er speelt in de gemeenteraad. Automatisch samengevat, helder geschreven.
                     </p>

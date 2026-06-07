@@ -26,8 +26,8 @@ export default function MunicipalityArchive({ municipality, meetings }: Props): 
             <div className="space-y-6">
                 <div className="space-y-1">
                     <p className="text-sm text-muted-foreground">
-                        <Link href="/" className="hover:underline">
-                            Volgjeraad
+                        <Link href="/" className="font-semibold hover:underline">
+                            Volg je raad
                         </Link>{' '}
                         &rsaquo;{' '}
                         <Link href={`/${municipality.slug}`} className="hover:underline">

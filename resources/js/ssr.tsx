@@ -6,7 +6,7 @@ createServer((page) =>
     createInertiaApp({
         page,
         render: renderToString,
-        title: (title) => (title ? `${title} - Volgjeraad` : 'Volgjeraad'),
+        title: (title) => (title ? `${title} - Volg je raad` : 'Volg je raad'),
         resolve: (name) => {
             const pages = import.meta.glob('./pages/**/*.tsx', { eager: true });
             return pages[`./pages/${name}.tsx`] as never;

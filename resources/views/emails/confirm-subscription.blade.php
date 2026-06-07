@@ -1,7 +1,7 @@
 <x-mail::message>
 # Bevestig je aanmelding
 
-Bedankt voor je aanmelding bij Volgjeraad voor **{{ $municipalityName }}**.
+Bedankt voor je aanmelding bij **Volg je raad** voor **{{ $municipalityName }}**.
 
 Klik op de knop hieronder om je aanmelding te bevestigen:
 
@@ -12,5 +12,5 @@ Aanmelding bevestigen
 Of kopieer deze link in je browser:
 {{ $confirmUrl }}
 
-*Je ontvangt dit e-mailbericht omdat iemand zich heeft aangemeld met dit e-mailadres via Volgjeraad. Als je je niet hebt aangemeld, kun je dit bericht negeren.*
+*Je ontvangt dit e-mailbericht omdat iemand zich heeft aangemeld met dit e-mailadres via Volg je raad. Als je je niet hebt aangemeld, kun je dit bericht negeren.*
 </x-mail::message>

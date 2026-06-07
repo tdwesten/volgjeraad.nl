@@ -8,7 +8,7 @@ export default function PublicLayout({ children }: PropsWithChildren): JSX.Eleme
             <header className="border-b border-border">
                 <div className="mx-auto flex max-w-5xl items-center px-4 py-3">
                     <Link href="/" className="group flex flex-col leading-tight">
-                        <span className="font-semibold transition-colors group-hover:text-primary">Volg je Raad</span>
+                        <span className="font-semibold transition-colors group-hover:text-primary">Volg je raad</span>
                         <span className="text-xs text-muted-foreground">
                             Volg wat er speelt in de gemeenteraad — automatisch samengevat met AI, helder geschreven.
                         </span>
@@ -20,20 +20,21 @@ export default function PublicLayout({ children }: PropsWithChildren): JSX.Eleme
                 <div className="mx-auto flex max-w-5xl flex-col gap-2 px-4 py-6 text-sm text-muted-foreground">
                     <p>
                         <Link href="/" className="font-semibold hover:underline">
-                            Volg je Raad
+                            Volg je raad
                         </Link>{' '}
                         — samenvattingen van gemeenteraadsvergaderingen
                     </p>
                     <p>
+                        Een{' '}
                         <a
                             href="https://github.com/tdwesten/volgjeraad.nl"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="hover:underline"
                         >
-                            Open source
+                            open source
                         </a>{' '}
-                        · Een tool van Thomas van der Westen —{' '}
+                        tool gemaakt door Thomas van der Westen —{' '}
                         <a
                             href="https://codesmiths.nl"
                             target="_blank"
