@@ -38,7 +38,9 @@ Route::get('/', LandingController::class)->name('home');
 
 Route::get('/nieuwsbrief/{newsletter}', [NewsletterWebController::class, 'show'])->name('newsletter.web');
 
-Route::post('/aanmelden', [SubscriptionController::class, 'store'])->name('subscription.store');
+Route::post('/aanmelden', [SubscriptionController::class, 'store'])
+    ->middleware('throttle:6,1')
+    ->name('subscription.store');
 Route::post('/gemeente-aanvragen', [MunicipalityRequestController::class, 'store'])
     ->middleware('throttle:6,1')
     ->name('municipality.request');

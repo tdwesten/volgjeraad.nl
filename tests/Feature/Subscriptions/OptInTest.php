@@ -91,6 +91,24 @@ test('invalid municipality slug is rejected', function (): void {
     ])->assertSessionHasErrors('municipality_slug');
 });
 
+test('te veel aanmeldingen worden ge-throttled', function (): void {
+    $municipality = Municipality::factory()->create();
+
+    collect(range(1, 6))->each(function () use ($municipality): void {
+        $this->post('/aanmelden', [
+            'email' => 'user@example.com',
+            'municipality_slug' => $municipality->slug,
+            'level' => 'standard',
+        ])->assertRedirect();
+    });
+
+    $this->post('/aanmelden', [
+        'email' => 'user@example.com',
+        'municipality_slug' => $municipality->slug,
+        'level' => 'standard',
+    ])->assertStatus(429);
+});
+
 test('invalid level is rejected', function (): void {
     $municipality = Municipality::factory()->create();
 
