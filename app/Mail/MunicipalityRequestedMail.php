@@ -3,12 +3,13 @@
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class MunicipalityRequestedMail extends Mailable
+class MunicipalityRequestedMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
@@ -19,8 +20,10 @@ class MunicipalityRequestedMail extends Mailable
 
     public function envelope(): Envelope
     {
+        $subjectName = trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', $this->municipalityName));
+
         return new Envelope(
-            subject: "Nieuwe gemeente-aanvraag: {$this->municipalityName}",
+            subject: "Nieuwe gemeente-aanvraag: {$subjectName}",
         );
     }
 

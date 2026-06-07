@@ -3,6 +3,7 @@
 // Item 11/12 — publiek
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\MunicipalityOverviewController;
+use App\Http\Controllers\Admin\MunicipalityRequestController as AdminMunicipalityRequestController;
 use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Controllers\Admin\SubscriberController;
 use App\Http\Controllers\Admin\VideoReviewController;
@@ -30,6 +31,7 @@ Route::middleware(['auth', 'is_admin'])->prefix('admin')->name('admin.')->group(
     Route::post('/videos/{video}/confirm', [VideoReviewController::class, 'confirm'])->name('videos.confirm');
     Route::get('/municipalities', [MunicipalityOverviewController::class, 'index'])->name('municipalities.index');
     Route::get('/municipalities/{municipality}', [MunicipalityOverviewController::class, 'show'])->name('municipalities.show');
+    Route::get('/gemeente-aanvragen', [AdminMunicipalityRequestController::class, 'index'])->name('municipality-requests.index');
 });
 
 Route::get('/', LandingController::class)->name('home');
@@ -37,7 +39,9 @@ Route::get('/', LandingController::class)->name('home');
 Route::get('/nieuwsbrief/{newsletter}', [NewsletterWebController::class, 'show'])->name('newsletter.web');
 
 Route::post('/aanmelden', [SubscriptionController::class, 'store'])->name('subscription.store');
-Route::post('/gemeente-aanvragen', [MunicipalityRequestController::class, 'store'])->name('municipality.request');
+Route::post('/gemeente-aanvragen', [MunicipalityRequestController::class, 'store'])
+    ->middleware('throttle:6,1')
+    ->name('municipality.request');
 Route::get('/bevestig/{token}', [SubscriptionController::class, 'confirm'])->name('subscription.confirm');
 Route::get('/uitschrijven/{token}', [SubscriptionController::class, 'unsubscribe'])->name('subscription.unsubscribe');
 

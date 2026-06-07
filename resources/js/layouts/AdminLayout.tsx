@@ -2,13 +2,14 @@ import { Toaster } from '@/components/ui/sonner';
 import { Link, usePage } from '@inertiajs/react';
 import { type PropsWithChildren } from 'react';
 import { type PageProps } from '@/types';
-import { Building2, ClipboardList, LayoutDashboard, Users } from 'lucide-react';
+import { Building2, ClipboardList, Inbox, LayoutDashboard, Users } from 'lucide-react';
 
 const navLinks = [
     { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/admin/review', label: 'Review', icon: ClipboardList },
     { href: '/admin/subscribers', label: 'Abonnees', icon: Users },
     { href: '/admin/municipalities', label: 'Gemeenten', icon: Building2 },
+    { href: '/admin/gemeente-aanvragen', label: 'Aanvragen', icon: Inbox },
 ];
 
 export default function AdminLayout({ children }: PropsWithChildren): JSX.Element {
