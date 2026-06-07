@@ -1,7 +1,7 @@
 import AdminLayout from '@/layouts/AdminLayout';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Link } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 
 interface MunicipalityItem {
     id: number;
@@ -41,7 +41,11 @@ export default function MunicipalitiesIndex({ municipalities }: Props): JSX.Elem
                     </TableHeader>
                     <TableBody>
                         {municipalities.map((municipality) => (
-                            <TableRow key={municipality.id}>
+                            <TableRow
+                                key={municipality.id}
+                                onClick={() => router.visit(`/admin/municipalities/${municipality.id}`)}
+                                className="cursor-pointer"
+                            >
                                 <TableCell className="font-medium">{municipality.name}</TableCell>
                                 <TableCell>
                                     {municipality.active ? (
@@ -63,14 +67,7 @@ export default function MunicipalitiesIndex({ municipalities }: Props): JSX.Elem
                                 <TableCell className="text-right tabular-nums">
                                     {municipality.published_summaries_count.toLocaleString('nl-NL')}
                                 </TableCell>
-                                <TableCell>
-                                    <Link
-                                        href={`/admin/municipalities/${municipality.id}`}
-                                        className="text-sm text-primary hover:underline"
-                                    >
-                                        Bekijken &rarr;
-                                    </Link>
-                                </TableCell>
+                                <TableCell className="text-right text-muted-foreground">&rarr;</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
