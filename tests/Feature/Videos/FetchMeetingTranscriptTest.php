@@ -127,6 +127,64 @@ test('empty transcript flags empty_transcript and leaves PDF summary untouched w
     Bus::assertNotDispatched(SummarizeMeetingJob::class);
 });
 
+test('reuses a cached transcript for the same youtube_video_id without calling the provider', function (): void {
+    Bus::fake();
+
+    // Provider mag NIET worden aangeroepen: het transcript bestaat al elders.
+    $this->mock(TranscriptProvider::class)->shouldReceive('fetch')->never();
+
+    $earlierMeeting = Meeting::factory()->council()->summarizable()->create(['starts_at' => now()->subWeek()]);
+    MeetingVideo::factory()->create([
+        'meeting_id' => $earlierMeeting->id,
+        'youtube_video_id' => 'dQw4w9WgXcQ',
+        'status' => VideoStatus::Transcribed->value,
+        'transcript_text' => 'Voorzitter: hergebruikt.',
+        'transcript_source' => 'supadata:auto',
+        'transcript_fetched_at' => now()->subWeek(),
+        'transcript_attempts' => 1,
+    ]);
+
+    $meeting = Meeting::factory()->council()->summarizable()->create(['starts_at' => now()->subDay()]);
+    $video = MeetingVideo::factory()->create([
+        'meeting_id' => $meeting->id,
+        'youtube_video_id' => 'dQw4w9WgXcQ',
+        'status' => VideoStatus::Matched->value,
+        'transcript_attempts' => 0,
+    ]);
+
+    app(FetchMeetingTranscript::class)->handle($video);
+
+    $video->refresh();
+    expect($video->status)->toBe(VideoStatus::Transcribed);
+    expect($video->transcript_text)->toBe('Voorzitter: hergebruikt.');
+    // Geen Supadata-aanroep → geen extra poging geteld.
+    expect($video->transcript_attempts)->toBe(0);
+    Bus::assertDispatchedTimes(SummarizeMeetingJob::class, count(SummaryLevel::cases()));
+});
+
+test('reuses the rows own transcript without calling the provider', function (): void {
+    Bus::fake();
+
+    $this->mock(TranscriptProvider::class)->shouldReceive('fetch')->never();
+
+    $meeting = Meeting::factory()->council()->summarizable()->create(['starts_at' => now()->subDay()]);
+    $video = MeetingVideo::factory()->create([
+        'meeting_id' => $meeting->id,
+        'youtube_video_id' => 'dQw4w9WgXcQ',
+        'status' => VideoStatus::Matched->value,
+        'transcript_text' => 'Voorzitter: al opgehaald.',
+        'transcript_source' => 'supadata:auto',
+        'transcript_attempts' => 1,
+    ]);
+
+    app(FetchMeetingTranscript::class)->handle($video);
+
+    $video->refresh();
+    expect($video->status)->toBe(VideoStatus::Transcribed);
+    expect($video->transcript_attempts)->toBe(1);
+    Bus::assertDispatchedTimes(SummarizeMeetingJob::class, count(SummaryLevel::cases()));
+});
+
 test('no youtube_video_id is a no-op', function (): void {
     Bus::fake();
     $this->mock(TranscriptProvider::class)->shouldReceive('fetch')->never();
