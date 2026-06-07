@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\MeetingType;
 use Database\Factories\MunicipalityFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -49,5 +50,17 @@ class Municipality extends Model
     public function scopeActive(Builder $query): void
     {
         $query->where('active', true);
+    }
+
+    /** @return string[] */
+    public function summarizeTypes(): array
+    {
+        $configured = ($this->settings ?? [])['summarize_types'] ?? null;
+
+        if (is_array($configured) && count($configured) > 0) {
+            return $configured;
+        }
+
+        return array_map(fn (MeetingType $t) => $t->value, MeetingType::cases());
     }
 }

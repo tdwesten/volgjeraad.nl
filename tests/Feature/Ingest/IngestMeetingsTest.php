@@ -94,13 +94,14 @@ test('unchanged hash with completed agenda does not redispatch', function (): vo
     Bus::assertNotDispatched(IngestMeetingAgendaJob::class);
 });
 
-test('committee type gets MetadataOnly and no agenda dispatch', function (): void {
+test('committee type gets MetadataOnly when summarize_types restricted to council', function (): void {
     Bus::fake();
 
     $municipality = Municipality::factory()->create([
         'ori_index' => 'brummen_nl',
         'raad_pattern' => 'raadsvergadering',
         'launch_date' => '2026-01-01',
+        'settings' => ['summarize_types' => ['council']],
     ]);
 
     $hits = [[
@@ -171,7 +172,7 @@ test('council meeting before launch_date outside backfill window gets MetadataOn
     Bus::assertNotDispatched(IngestMeetingAgendaJob::class);
 });
 
-test('two-pass: both council meetings before launch get Summarize when backfill=2, non-council stays MetadataOnly', function (): void {
+test('two-pass: both council meetings before launch get Summarize when backfill=2, non-council stays MetadataOnly when council-only config', function (): void {
     Bus::fake();
 
     $municipality = Municipality::factory()->create([
@@ -179,6 +180,7 @@ test('two-pass: both council meetings before launch get Summarize when backfill=
         'raad_pattern' => 'raadsvergadering',
         'launch_date' => CarbonImmutable::today()->toDateString(),
         'backfill_recent_meetings' => 2,
+        'settings' => ['summarize_types' => ['council']],
     ]);
 
     $hits = [
@@ -225,6 +227,100 @@ test('two-pass: both council meetings before launch get Summarize when backfill=
     expect(Meeting::where('ori_id', 'committee-1')->first()->ingest_mode)->toBe(IngestMode::MetadataOnly);
 
     Bus::assertDispatchedTimes(IngestMeetingAgendaJob::class, 2);
+});
+
+test('with default config committee and other meeting types within launch window get Summarize', function (): void {
+    Bus::fake();
+
+    $municipality = Municipality::factory()->create([
+        'ori_index' => 'brummen_nl',
+        'raad_pattern' => 'raadsvergadering',
+        'launch_date' => '2026-01-01',
+        'backfill_recent_meetings' => 0,
+        'settings' => null,
+    ]);
+
+    $hits = [
+        [
+            '_id' => 'meeting-committee-1',
+            '_source' => [
+                '@type' => 'Meeting',
+                'name' => 'Commissievergadering',
+                'start_date' => '2026-03-01T19:00:00+01:00',
+                'committee' => ['@id' => 'org-2'],
+            ],
+        ],
+        [
+            '_id' => 'meeting-other-1',
+            '_source' => [
+                '@type' => 'Meeting',
+                'name' => 'Informatiebijeenkomst',
+                'start_date' => '2026-03-15T19:00:00+01:00',
+                'committee' => ['@id' => 'org-3'],
+            ],
+        ],
+    ];
+
+    $orgs = [
+        'org-2' => ['name' => 'Commissie Samenleving'],
+        'org-3' => ['name' => 'Informatiebijeenkomst gemeente'],
+    ];
+
+    $client = mockOriClient($hits, $orgs);
+    $action = app(IngestMeetings::class, ['client' => $client]);
+    $action->handle($municipality);
+
+    expect(Meeting::where('ori_id', 'meeting-committee-1')->first()->ingest_mode)->toBe(IngestMode::Summarize);
+    expect(Meeting::where('ori_id', 'meeting-other-1')->first()->ingest_mode)->toBe(IngestMode::Summarize);
+
+    Bus::assertDispatchedTimes(IngestMeetingAgendaJob::class, 2);
+});
+
+test('backfill top-N is calculated across all configured types', function (): void {
+    Bus::fake();
+
+    $municipality = Municipality::factory()->create([
+        'ori_index' => 'brummen_nl',
+        'raad_pattern' => 'raadsvergadering',
+        'launch_date' => '2026-06-01',
+        'backfill_recent_meetings' => 2,
+        'settings' => ['summarize_types' => ['council', 'committee']],
+    ]);
+
+    // Seed a council and a committee meeting that occupy the top-2 backfill slots
+    Meeting::factory()->create([
+        'municipality_id' => $municipality->id,
+        'ori_id' => 'pre-council-1',
+        'type' => MeetingType::Council->value,
+        'starts_at' => '2026-05-15T19:00:00+01:00',
+        'agenda_ingested_at' => now(),
+    ]);
+    Meeting::factory()->create([
+        'municipality_id' => $municipality->id,
+        'ori_id' => 'pre-committee-1',
+        'type' => MeetingType::Committee->value,
+        'starts_at' => '2026-04-01T19:00:00+01:00',
+        'agenda_ingested_at' => now(),
+    ]);
+
+    // Older council meeting is displaced because top-2 is already taken by the mixed set above
+    $hits = [[
+        '_id' => 'old-council',
+        '_source' => [
+            '@type' => 'Meeting',
+            'name' => 'Oude Raadsvergadering',
+            'start_date' => '2025-01-01T19:00:00+01:00',
+            'committee' => ['@id' => 'org-1'],
+        ],
+    ]];
+
+    $client = mockOriClient($hits, ['org-1' => ['name' => 'Raadsvergadering gemeente Brummen']]);
+    $action = app(IngestMeetings::class, ['client' => $client]);
+    $action->handle($municipality);
+
+    expect(Meeting::where('ori_id', 'old-council')->first()->ingest_mode)->toBe(IngestMode::MetadataOnly);
+
+    Bus::assertNotDispatched(IngestMeetingAgendaJob::class);
 });
 
 test('second ingest with unchanged hash still dispatches when agenda not yet fetched', function (): void {

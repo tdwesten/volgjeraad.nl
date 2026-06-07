@@ -106,11 +106,12 @@ class IngestMeetings
             return;
         }
 
+        $summarizeTypes = $m->summarizeTypes();
         $summarizableOriIds = [];
 
-        // Council meetings on or after launch date (within ingested set)
+        // Summarizable meetings on or after launch date (within ingested set)
         $afterLaunchIds = Meeting::where('municipality_id', $m->id)
-            ->where('type', MeetingType::Council->value)
+            ->whereIn('type', $summarizeTypes)
             ->whereIn('ori_id', $ingestedOriIds)
             ->where('starts_at', '>=', $launchDate)
             ->pluck('ori_id')
@@ -118,11 +119,11 @@ class IngestMeetings
 
         $summarizableOriIds = array_merge($summarizableOriIds, $afterLaunchIds);
 
-        // Top-N most recent council meetings before launch date (global backfill)
+        // Top-N most recent summarizable meetings before launch date (global backfill)
         $backfillCount = (int) $m->backfill_recent_meetings;
         if ($backfillCount > 0) {
             $backfillIds = Meeting::where('municipality_id', $m->id)
-                ->where('type', MeetingType::Council->value)
+                ->whereIn('type', $summarizeTypes)
                 ->where('starts_at', '<', $launchDate)
                 ->orderByDesc('starts_at')
                 ->limit($backfillCount)

@@ -12,7 +12,7 @@ class DetermineIngestMode
 {
     public function handle(Municipality $m, ?CarbonImmutable $startsAt, MeetingType $type): IngestMode
     {
-        if ($type !== MeetingType::Council) {
+        if (! in_array($type->value, $m->summarizeTypes(), true)) {
             return IngestMode::MetadataOnly;
         }
 
@@ -26,18 +26,17 @@ class DetermineIngestMode
             return IngestMode::Summarize;
         }
 
-        // Within the last N council meetings before launch date
+        // Within the last N summarizable meetings before launch date
         $backfillCount = (int) $m->backfill_recent_meetings;
         if ($backfillCount > 0 && $startsAt !== null) {
-            $recentCouncilIds = Meeting::where('municipality_id', $m->id)
-                ->where('type', MeetingType::Council->value)
+            $recentIds = Meeting::where('municipality_id', $m->id)
+                ->whereIn('type', $m->summarizeTypes())
                 ->where('starts_at', '<', $launchDate)
                 ->orderByDesc('starts_at')
                 ->limit($backfillCount)
                 ->pluck('starts_at', 'ori_id');
 
-            $matchedByTime = $recentCouncilIds->contains(fn ($s) => CarbonImmutable::parse($s)->eq($startsAt));
-            if ($matchedByTime) {
+            if ($recentIds->contains(fn ($s) => CarbonImmutable::parse($s)->eq($startsAt))) {
                 return IngestMode::Summarize;
             }
         }
