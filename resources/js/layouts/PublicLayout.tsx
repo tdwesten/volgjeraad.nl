@@ -16,7 +16,7 @@ export default function PublicLayout({ children }: PropsWithChildren): JSX.Eleme
             <footer className="border-t border-border">
                 <div className="mx-auto flex max-w-5xl flex-col gap-2 px-4 py-6 text-sm text-muted-foreground">
                     <p>
-                        <Link href="/" className="hover:underline">
+                        <Link href="/" className="font-semibold hover:underline">
                             Volgjeraad
                         </Link>{' '}
                         — samenvattingen van gemeenteraadsvergaderingen
@@ -37,7 +37,7 @@ export default function PublicLayout({ children }: PropsWithChildren): JSX.Eleme
                             rel="noopener noreferrer"
                             className="hover:underline"
                         >
-                            codesmiths.nl
+                            Codesmiths.nl
                         </a>
                     </p>
                 </div>
