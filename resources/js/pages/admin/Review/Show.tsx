@@ -2,10 +2,10 @@ import AdminLayout from '@/layouts/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import SummaryCard from '@/components/SummaryCard';
-import { Link, useForm, router, usePage } from '@inertiajs/react';
+import { Link, useForm, router, usePage, usePoll } from '@inertiajs/react';
 import { type PageProps } from '@/types';
 import { useState } from 'react';
-import { AlertTriangle, CheckCircle2, Clock, RefreshCw, Send, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Clock, RefreshCw, Send, Tv, XCircle } from 'lucide-react';
 
 interface SummaryItem {
     id: number;
@@ -142,6 +142,10 @@ export default function ReviewShow({ meeting, newsletter, standardSummary, simpl
     const { flash } = usePage<PageProps>().props;
     const { post: postRegenerate, processing: regenerating } = useForm({});
 
+    // Live status: ververs het verwerkingslogboek (en het resultaat) periodiek
+    // zodat de admin de pijplijn-status ziet meelopen zonder te herladen.
+    usePoll(4000, { only: ['logs', 'standardSummary', 'simpleSummary', 'newsletter'] });
+
     const approve = (): void => {
         router.post(`/admin/review/${meeting.id}/approve`);
     };
@@ -179,14 +183,12 @@ export default function ReviewShow({ meeting, newsletter, standardSummary, simpl
                     </div>
                     <div className="flex gap-2">
                         {video_url && (
-                            <a
-                                href={video_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
-                            >
-                                Bekijk de uitzending
-                            </a>
+                            <Button variant="outline" asChild>
+                                <a href={video_url} target="_blank" rel="noopener noreferrer">
+                                    <Tv className="h-4 w-4" />
+                                    Bekijk de uitzending
+                                </a>
+                            </Button>
                         )}
                         <Button variant="outline" onClick={handleRegenerate} disabled={regenerating}>
                             <RefreshCw className="h-4 w-4" />
@@ -229,7 +231,16 @@ export default function ReviewShow({ meeting, newsletter, standardSummary, simpl
                 )}
 
                 <div>
-                    <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Verwerkingslogboek</h2>
+                    <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                        Verwerkingslogboek
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium normal-case text-muted-foreground">
+                            <span className="relative flex h-1.5 w-1.5">
+                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-75" />
+                                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-green-500" />
+                            </span>
+                            live
+                        </span>
+                    </h2>
                     <ProcessingTimeline logs={logs} />
                 </div>
             </div>
