@@ -22,7 +22,7 @@ export default defineConfig({
         instruckt({ server: false, endpoint: '/instruckt', adapters: ['react', 'blade'], mcp: true }),
         instrucktBuildShim,
         laravel({
-            input: ['resources/js/app.tsx'],
+            input: ['resources/css/app.css', 'resources/js/app.tsx'],
             ssr: 'resources/js/ssr.tsx',
             refresh: true,
             fonts: [
