@@ -6,7 +6,7 @@ use App\Models\Municipality;
 use App\Models\MunicipalityRequest;
 use Illuminate\Support\Facades\Schedule;
 
-// Item 15 — dagelijkse ORI-ingest per actieve gemeente
+// Item 15 — ORI-ingest per actieve gemeente, elke 15 minuten
 Schedule::call(function () {
     Municipality::active()->each(
         fn (
@@ -14,8 +14,8 @@ Schedule::call(function () {
         ) => IngestMunicipalityMeetingsJob::dispatch($municipality->id),
     );
 })
-    ->dailyAt('06:00')
-    ->name('volgjeraad:daily-ingest')
+    ->everyFifteenMinutes()
+    ->name('volgjeraad:ingest')
     ->withoutOverlapping();
 
 Schedule::job(new MatchMeetingVideosJob)
