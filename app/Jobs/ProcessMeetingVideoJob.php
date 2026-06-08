@@ -12,6 +12,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Middleware\RateLimited;
 use Illuminate\Queue\Middleware\ThrottlesExceptions;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class ProcessMeetingVideoJob implements ShouldQueue
@@ -28,6 +29,8 @@ class ProcessMeetingVideoJob implements ShouldQueue
         DispatchMeetingSummariesIfReady $dispatchSummaries,
         RecordProcessingEvent $log,
     ): void {
+        Log::info('ProcessMeetingVideoJob gestart', ['meeting_id' => $this->meetingId]);
+
         $meeting = Meeting::with('video')->findOrFail($this->meetingId);
         $video = $meeting->video;
         $maxAttempts = (int) config('volgjeraad.youtube.max_transcript_attempts');
@@ -92,5 +95,11 @@ class ProcessMeetingVideoJob implements ShouldQueue
         return [60, 300, 900];
     }
 
-    public function failed(Throwable $exception): void {}
+    public function failed(Throwable $exception): void
+    {
+        Log::error('ProcessMeetingVideoJob mislukt', [
+            'meeting_id' => $this->meetingId,
+            'exception' => $exception->getMessage(),
+        ]);
+    }
 }

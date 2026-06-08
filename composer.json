@@ -17,7 +17,8 @@
         "laravel/tinker": "^3.0",
         "lettermint/lettermint-laravel": "^2.0",
         "saloonphp/laravel-plugin": "^4",
-        "saloonphp/saloon": "^4"
+        "saloonphp/saloon": "^4",
+        "sentry/sentry-laravel": "^4.25"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

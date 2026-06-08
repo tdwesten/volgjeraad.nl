@@ -8,6 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Middleware\RateLimited;
 use Illuminate\Queue\Middleware\ThrottlesExceptions;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class IngestMunicipalityMeetingsJob implements ShouldQueue
@@ -20,8 +21,12 @@ class IngestMunicipalityMeetingsJob implements ShouldQueue
 
     public function handle(IngestMeetings $action): void
     {
+        Log::info('IngestMunicipalityMeetingsJob gestart', ['municipality_id' => $this->municipalityId]);
+
         $municipality = Municipality::findOrFail($this->municipalityId);
         $action->handle($municipality);
+
+        Log::info('IngestMunicipalityMeetingsJob klaar', ['municipality_id' => $this->municipalityId]);
     }
 
     /** @return array<int, mixed> */
@@ -39,5 +44,11 @@ class IngestMunicipalityMeetingsJob implements ShouldQueue
         return [60, 300, 900];
     }
 
-    public function failed(Throwable $exception): void {}
+    public function failed(Throwable $exception): void
+    {
+        Log::error('IngestMunicipalityMeetingsJob mislukt', [
+            'municipality_id' => $this->municipalityId,
+            'exception' => $exception->getMessage(),
+        ]);
+    }
 }

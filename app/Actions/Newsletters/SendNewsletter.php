@@ -7,6 +7,7 @@ use App\Enums\SummaryLevel;
 use App\Mail\NewsletterMail;
 use App\Models\Newsletter;
 use App\Models\Subscriber;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class SendNewsletter
@@ -14,8 +15,15 @@ class SendNewsletter
     public function handle(Newsletter $newsletter): void
     {
         if ($newsletter->status === NewsletterStatus::Sent) {
+            Log::info('Nieuwsbrief al verzonden, overslaan', ['newsletter_id' => $newsletter->id]);
+
             return;
         }
+
+        Log::info('Nieuwsbrief verzenden gestart', [
+            'newsletter_id' => $newsletter->id,
+            'municipality_id' => $newsletter->municipality_id,
+        ]);
 
         $newsletter->update(['status' => NewsletterStatus::Sending->value]);
 
@@ -49,6 +57,11 @@ class SendNewsletter
         $newsletter->update([
             'status' => NewsletterStatus::Sent->value,
             'sent_at' => now(),
+            'recipients_count' => $totalRecipients,
+        ]);
+
+        Log::info('Nieuwsbrief verzonden', [
+            'newsletter_id' => $newsletter->id,
             'recipients_count' => $totalRecipients,
         ]);
     }

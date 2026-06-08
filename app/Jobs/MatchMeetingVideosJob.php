@@ -7,6 +7,8 @@ use App\Enums\VideoStatus;
 use App\Models\Meeting;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class MatchMeetingVideosJob implements ShouldQueue
 {
@@ -14,9 +16,12 @@ class MatchMeetingVideosJob implements ShouldQueue
 
     public function handle(): void
     {
+        Log::info('MatchMeetingVideosJob gestart');
+
         $maxFindDays = (int) config('volgjeraad.youtube.max_find_days');
         $maxTranscriptAttempts = (int) config('volgjeraad.youtube.max_transcript_attempts');
         $cutoff = now()->subDays($maxFindDays)->startOfDay();
+        $dispatched = 0;
 
         Meeting::query()
             ->where('type', MeetingType::Council)
@@ -47,10 +52,20 @@ class MatchMeetingVideosJob implements ShouldQueue
             })
             ->whereNull('summarized_at')
             ->select('id')
-            ->chunkById(100, function ($meetings): void {
+            ->chunkById(100, function ($meetings) use (&$dispatched): void {
                 foreach ($meetings as $meeting) {
                     ProcessMeetingVideoJob::dispatch($meeting->id);
+                    $dispatched++;
                 }
             });
+
+        Log::info('MatchMeetingVideosJob klaar', ['dispatched' => $dispatched]);
+    }
+
+    public function failed(Throwable $exception): void
+    {
+        Log::error('MatchMeetingVideosJob mislukt', [
+            'exception' => $exception->getMessage(),
+        ]);
     }
 }
