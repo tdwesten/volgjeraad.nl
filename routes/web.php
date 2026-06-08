@@ -42,6 +42,7 @@ Route::middleware(['auth', 'is_admin'])->prefix('admin')->name('admin.')->group(
     Route::get('/municipalities/{municipality}', [MunicipalityOverviewController::class, 'show'])->name('municipalities.show');
     Route::patch('/municipalities/{municipality}/active', [MunicipalityOverviewController::class, 'toggleActive'])->name('municipalities.toggle-active');
     Route::post('/municipalities/{municipality}/channel', [MunicipalityOverviewController::class, 'updateChannel'])->name('municipalities.channel');
+    Route::post('/municipalities/{municipality}/meetings/{meeting}/process', [MunicipalityOverviewController::class, 'processMeeting'])->name('municipalities.process-meeting');
     Route::get('/gemeente-aanvragen', [AdminMunicipalityRequestController::class, 'index'])->name('municipality-requests.index');
 });
 

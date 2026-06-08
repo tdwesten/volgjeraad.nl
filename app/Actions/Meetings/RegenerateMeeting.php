@@ -3,8 +3,11 @@
 namespace App\Actions\Meetings;
 
 use App\Actions\Logging\RecordProcessingEvent;
+use App\Enums\IngestMode;
 use App\Jobs\IngestMeetingAgendaJob;
+use App\Jobs\ProcessMeetingVideoJob;
 use App\Models\Meeting;
+use Illuminate\Support\Facades\Log;
 
 class RegenerateMeeting
 {
@@ -12,14 +15,18 @@ class RegenerateMeeting
 
     public function handle(Meeting $meeting): void
     {
+        Log::info('Handmatige (her)verwerking gestart', ['meeting_id' => $meeting->id]);
+
         // Delete meeting-level summaries (cascade deletes newsletter_summary pivot)
         $meeting->summaries()->delete();
 
         // Delete newsletter draft (cascade deletes newsletter_summary pivot)
         $meeting->newsletter()->delete();
 
-        // Reset processing flags so the pipeline gates will fire again
+        // Forceer samenvatten en reset de processing-flags zodat de pipeline-gates
+        // opnieuw vuren. Zonder Summarize-mode slaat DispatchMeetingSummariesIfReady over.
         $meeting->update([
+            'ingest_mode' => IngestMode::Summarize->value,
             'summarized_at' => null,
             'agenda_ingested_at' => null,
         ]);
@@ -31,6 +38,9 @@ class RegenerateMeeting
 
         $this->log->handle($meeting, 'regenerate', 'info', 'Handmatig opnieuw verwerken gestart');
 
+        // Trap zowel de agenda-ingest (PDF-bronnen) als de video-pipeline meteen aan,
+        // zodat verwerking direct begint i.p.v. te wachten op de dagelijkse video-match.
         IngestMeetingAgendaJob::dispatch($meeting->id);
+        ProcessMeetingVideoJob::dispatch($meeting->id);
     }
 }

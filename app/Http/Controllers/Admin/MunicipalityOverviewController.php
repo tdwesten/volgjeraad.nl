@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\Meetings\RegenerateMeeting;
 use App\Actions\Municipalities\FindMunicipalityStream;
 use App\Enums\SummaryLevel;
 use App\Enums\SummaryStatus;
@@ -113,6 +114,15 @@ class MunicipalityOverviewController extends Controller
             'ori_status' => $oriStatus,
             'meetings' => $meetings,
         ]);
+    }
+
+    public function processMeeting(Municipality $municipality, Meeting $meeting, RegenerateMeeting $action): RedirectResponse
+    {
+        abort_unless($meeting->municipality_id === $municipality->id, 404);
+
+        $action->handle($meeting);
+
+        return back()->with('success', "Verwerking gestart voor '{$meeting->name}'.");
     }
 
     public function toggleActive(Municipality $municipality): RedirectResponse

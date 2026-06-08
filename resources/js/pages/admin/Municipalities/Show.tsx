@@ -86,6 +86,28 @@ function SummaryStatusBadge({ status }: { status: string }): JSX.Element {
     );
 }
 
+function ProcessMeetingButton({ municipalityId, meetingId }: { municipalityId: number; meetingId: number }): JSX.Element {
+    const { post, processing } = useForm({});
+
+    const start = (): void => {
+        if (!window.confirm('Verwerking (opnieuw) starten? Bestaande samenvattingen voor deze vergadering worden vervangen.')) {
+            return;
+        }
+        post(`/admin/municipalities/${municipalityId}/meetings/${meetingId}/process`, { preserveScroll: true });
+    };
+
+    return (
+        <button
+            type="button"
+            onClick={start}
+            disabled={processing}
+            className="text-sm text-primary hover:underline disabled:opacity-50"
+        >
+            {processing ? 'Bezig…' : 'Verwerken'}
+        </button>
+    );
+}
+
 function ActiveToggle({ id, active }: { id: number; active: boolean }): JSX.Element {
     const { patch, processing } = useForm({});
 
@@ -285,6 +307,10 @@ export default function MunicipalitiesShow({ municipality, ori_status, meetings 
                                                     Review
                                                 </Link>
                                             )}
+                                            <ProcessMeetingButton
+                                                municipalityId={municipality.id}
+                                                meetingId={meeting.id}
+                                            />
                                             <Link
                                                 href={`/${municipality.slug}/vergadering/${meeting.id}`}
                                                 className="text-sm text-muted-foreground hover:underline"
