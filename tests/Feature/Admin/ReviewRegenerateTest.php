@@ -41,7 +41,7 @@ test('admin can regenerate a meeting and summaries are deleted', function (): vo
 
     $this->actingAs($admin)
         ->post("/admin/review/{$meeting->id}/regenerate")
-        ->assertRedirect('/admin/review')
+        ->assertRedirect("/admin/municipalities/{$municipality->id}/meetings/{$meeting->id}")
         ->assertSessionHas('success', 'Vergadering wordt opnieuw verwerkt.');
 
     expect($meeting->fresh()->summaries()->count())->toBe(0);

@@ -130,7 +130,7 @@ test('approve publishes summaries and dispatches SendNewsletterJob', function ()
 
     $this->actingAs($admin)
         ->post("/admin/review/{$meeting->id}/approve")
-        ->assertRedirect('/admin/review');
+        ->assertRedirect("/admin/municipalities/{$municipality->id}/meetings/{$meeting->id}");
 
     expect($summary->fresh()->status)->toBe(SummaryStatus::Published);
     Queue::assertPushed(SendNewsletterJob::class);

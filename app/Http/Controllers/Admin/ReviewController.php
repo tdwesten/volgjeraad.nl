@@ -66,13 +66,15 @@ class ReviewController extends Controller
     {
         $action->handle($meeting);
 
-        return redirect()->route('admin.review.index')->with('success', 'Nieuwsbrief goedgekeurd en verstuurd.');
+        return redirect()->route('admin.municipalities.meetings.show', [$meeting->municipality_id, $meeting])
+            ->with('success', 'Nieuwsbrief goedgekeurd en verstuurd.');
     }
 
     public function regenerate(Meeting $meeting, RegenerateMeeting $action): RedirectResponse
     {
         $action->handle($meeting);
 
-        return redirect()->route('admin.review.index')->with('success', 'Vergadering wordt opnieuw verwerkt.');
+        return redirect()->route('admin.municipalities.meetings.show', [$meeting->municipality_id, $meeting])
+            ->with('success', 'Vergadering wordt opnieuw verwerkt.');
     }
 }
