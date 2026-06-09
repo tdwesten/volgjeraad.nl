@@ -187,3 +187,19 @@ test('show returns wacht op verwerking for a summarizable meeting without summar
             ->where('meetings.0.summary_status', 'Wacht op verwerking')
         );
 });
+
+test('the overview exposes a processing status label per meeting', function (): void {
+    $user = User::factory()->create(['is_admin' => true]);
+    $muni = Municipality::factory()->create(['launch_date' => now()->subYear()]);
+    Meeting::factory()->summarizable()->create([
+        'municipality_id' => $muni->id,
+        'starts_at' => now()->subDays(10),
+        'summary_skipped_reason' => 'no_source',
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('admin.municipalities.show', $muni))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('meetings.0.processing_status', 'no_source')
+            ->where('meetings.0.processing_label', 'Geen bron — geen samenvatting'));
+});

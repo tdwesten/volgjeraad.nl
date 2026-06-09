@@ -81,7 +81,7 @@ class MunicipalityOverviewController extends Controller
     public function show(Municipality $municipality, OriClient $oriClient): Response
     {
         $meetings = $municipality->meetings()
-            ->with(['summaries', 'video'])
+            ->with(['municipality', 'summaries', 'video'])
             ->latest('starts_at')
             ->get()
             ->map(fn (Meeting $meeting): array => [
@@ -91,6 +91,8 @@ class MunicipalityOverviewController extends Controller
                 'starts_at' => $meeting->starts_at?->toIso8601String(),
                 'ingest_mode' => $meeting->ingest_mode->value,
                 'summary_status' => $meeting->summaryStatusLabel(),
+                'processing_status' => $meeting->processingStatus()->value,
+                'processing_label' => $meeting->processingStatus()->adminLabel(),
                 'is_summarizable' => $meeting->shouldSummarize(),
                 'teaser' => $meeting->summaries
                     ->firstWhere('level', SummaryLevel::Plain)?->body,
