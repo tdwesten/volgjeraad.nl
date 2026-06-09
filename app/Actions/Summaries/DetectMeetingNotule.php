@@ -4,6 +4,7 @@ namespace App\Actions\Summaries;
 
 use App\Actions\Logging\RecordProcessingEvent;
 use App\Ai\Agents\NotuleDetectionAgent;
+use App\Models\MediaObject;
 use App\Models\Meeting;
 use App\Support\PromptRepository;
 use Illuminate\Support\Facades\Log;
@@ -21,13 +22,11 @@ class DetectMeetingNotule
         }
 
         $docs = [];
+        $validIds = [];
         foreach ($meeting->agendaItems()->with('mediaObjects')->get() as $item) {
             foreach ($item->mediaObjects as $media) {
-                $docs[] = [
-                    'id' => $media->id,
-                    'name' => $media->name,
-                    'file_name' => $media->file_name,
-                ];
+                $docs[] = self::documentPayload($media);
+                $validIds[] = (int) $media->id;
             }
         }
 
@@ -50,9 +49,15 @@ class DetectMeetingNotule
                 'meeting_id' => $meeting->id,
                 'error' => $e->getMessage(),
             ]);
+            // Poging gedaan (ook al faalde de AI) → markeer zodat de sweep niet
+            // elke 15 min opnieuw probeert.
+            $meeting->update(['notule_checked_at' => now()]);
 
             return;
         }
+
+        // Poging gedaan → throttle-stempel zetten ongeacht de uitkomst.
+        $meeting->update(['notule_checked_at' => now()]);
 
         $structured = $response->structured ?? [];
         $present = (bool) ($structured['is_notule_present'] ?? false);
@@ -62,11 +67,40 @@ class DetectMeetingNotule
             return;
         }
 
+        // Accepteer het door de AI geretourneerde id alleen als het echt bij deze
+        // meeting hoort; presence mag waar zijn met een null id.
+        $candidate = $structured['media_object_id'] ?? null;
+        $mediaObjectId = ($candidate !== null && in_array((int) $candidate, $validIds, true))
+            ? (int) $candidate
+            : null;
+
         $meeting->update([
             'notule_detected_at' => now(),
-            'notule_media_object_id' => $structured['media_object_id'] ?? null,
+            'notule_media_object_id' => $mediaObjectId,
         ]);
 
         $this->log->handle($meeting, 'notule', 'success', "Notule gevonden (confidence: {$confidence}%)");
+    }
+
+    /**
+     * Bouw de documentregel voor de AI-agent. Neemt de document/upload-datum mee
+     * indien beschikbaar in het media raw_payload.
+     *
+     * @return array<string, mixed>
+     */
+    public static function documentPayload(MediaObject $media): array
+    {
+        $doc = [
+            'id' => $media->id,
+            'name' => $media->name,
+            'file_name' => $media->file_name,
+        ];
+
+        $date = data_get($media->raw_payload, 'date');
+        if ($date !== null) {
+            $doc['date'] = $date;
+        }
+
+        return $doc;
     }
 }

@@ -60,3 +60,52 @@ test('is a no-op when a notule was already detected', function (): void {
     // detected_at blijft de oude waarde (agent niet bepalend)
     expect($meeting->fresh()->notule_media_object_id)->toBe($media->id);
 });
+
+test('ignores a media_object_id that is not among the meetings documents', function (): void {
+    [$meeting] = meetingWithDocs();
+    NotuleDetectionAgent::fake([[
+        'is_notule_present' => true,
+        'media_object_id' => 999999, // hoort niet bij deze meeting
+        'confidence' => 90,
+    ]]);
+
+    app(DetectMeetingNotule::class)->handle($meeting);
+
+    // Presence boven de drempel → notule wél vastgelegd, maar het foute id verworpen.
+    expect($meeting->fresh()->notule_detected_at)->not->toBeNull();
+    expect($meeting->fresh()->notule_media_object_id)->toBeNull();
+});
+
+test('marks notule_checked_at after an attempt even when nothing is found', function (): void {
+    [$meeting] = meetingWithDocs();
+    NotuleDetectionAgent::fake([[
+        'is_notule_present' => false,
+        'media_object_id' => null,
+        'confidence' => 10,
+    ]]);
+
+    app(DetectMeetingNotule::class)->handle($meeting);
+
+    expect($meeting->fresh()->notule_checked_at)->not->toBeNull();
+    expect($meeting->fresh()->notule_detected_at)->toBeNull();
+});
+
+test('document payload includes the date from raw_payload when available', function (): void {
+    $media = new MediaObject(['name' => 'Besluitenlijst', 'file_name' => 'besluit.pdf']);
+    $media->id = 5;
+    $media->raw_payload = ['date' => '2026-05-01'];
+
+    $doc = DetectMeetingNotule::documentPayload($media);
+
+    expect($doc['date'])->toBe('2026-05-01');
+    expect($doc['id'])->toBe(5);
+});
+
+test('document payload omits the date when raw_payload has none', function (): void {
+    $media = new MediaObject(['name' => 'Agenda', 'file_name' => 'agenda.pdf']);
+    $media->id = 6;
+
+    $doc = DetectMeetingNotule::documentPayload($media);
+
+    expect($doc)->not->toHaveKey('date');
+});
