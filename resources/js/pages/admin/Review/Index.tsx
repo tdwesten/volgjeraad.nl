@@ -73,7 +73,7 @@ export default function ReviewIndex({ newsletters }: Props): JSX.Element {
                                     <TableCell>
                                         {item.meeting && (
                                             <Link
-                                                href={`/admin/review/${item.meeting.id}`}
+                                                href={`/admin/municipalities/${item.meeting.municipality.id}/meetings/${item.meeting.id}`}
                                                 className="text-sm text-primary hover:underline"
                                             >
                                                 Bekijken &rarr;

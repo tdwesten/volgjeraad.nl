@@ -312,10 +312,10 @@ export default function MunicipalitiesShow({ municipality, ori_status, meetings 
                                         <div className="flex gap-3">
                                             {meeting.is_summarizable && (
                                                 <Link
-                                                    href={`/admin/review/${meeting.id}`}
+                                                    href={`/admin/municipalities/${municipality.id}/meetings/${meeting.id}`}
                                                     className="text-sm text-primary hover:underline"
                                                 >
-                                                    Review
+                                                    Beheer
                                                 </Link>
                                             )}
                                             <ProcessMeetingButton
