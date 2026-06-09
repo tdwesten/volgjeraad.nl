@@ -90,6 +90,11 @@ test('a detected notule resolves the notule source', function (): void {
 
 test('no source before the recheck deadline re-ingests the agenda', function (): void {
     Bus::fake();
+    NotuleDetectionAgent::fake([[
+        'is_notule_present' => false,
+        'media_object_id' => null,
+        'confidence' => 0,
+    ]]);
     $m = channelCouncilMeeting('-2 days'); // binnen 2 werkdagen
     $m->video()->create(['status' => VideoStatus::NotFound->value, 'transcript_attempts' => 0]);
     app(ResolveMeetingSummarySources::class)->handle($m->fresh());
@@ -97,10 +102,21 @@ test('no source before the recheck deadline re-ingests the agenda', function ():
     expect($m->fresh()->summary_skipped_reason)->toBeNull();
 });
 
-test('no source past the recheck deadline marks no_source and dispatches nothing', function (): void {
+test('no source past the recheck deadline marks no_source only after a post-deadline recheck', function (): void {
     Bus::fake();
+    NotuleDetectionAgent::fake([[
+        'is_notule_present' => false,
+        'media_object_id' => null,
+        'confidence' => 0,
+    ]]);
     $m = channelCouncilMeeting('-10 days'); // ruim voorbij 2 werkdagen
     $m->video()->create(['status' => VideoStatus::NotFound->value, 'transcript_attempts' => 0]);
+
+    // Eerste sweep: er draait eerst een post-deadline recheck-cyclus; nog géén skip.
+    app(ResolveMeetingSummarySources::class)->handle($m->fresh());
+    expect($m->fresh()->summary_skipped_reason)->toBeNull();
+
+    // Tweede sweep: de recheck leverde niets op → nu pas no_source.
     app(ResolveMeetingSummarySources::class)->handle($m->fresh());
     expect($m->fresh()->summary_skipped_reason)->toBe(Meeting::SKIP_NO_SOURCE);
     Bus::assertNotDispatched(SummarizeMeetingJob::class);
@@ -124,6 +140,9 @@ test('council+channel needing confirmation past the deadline ends as no_source i
     $m = channelCouncilMeeting('-10 days'); // ruim voorbij de werkdag-deadline
     $m->video()->create(['status' => VideoStatus::NeedsConfirmation->value, 'transcript_attempts' => 0]);
 
+    // NeedsConfirmation blijft niet eeuwig hangen: het valt voorbij de deadline door
+    // naar het notule-pad en eindigt — na een post-deadline recheck — als no_source.
+    app(ResolveMeetingSummarySources::class)->handle($m->fresh());
     app(ResolveMeetingSummarySources::class)->handle($m->fresh());
 
     expect($m->fresh()->summary_skipped_reason)->toBe(Meeting::SKIP_NO_SOURCE);
@@ -157,4 +176,74 @@ test('a second sweep within the throttle window does not re-run the notule check
     app(ResolveMeetingSummarySources::class)->handle($m->fresh());
 
     expect($m->fresh()->notule_checked_at->equalTo($firstCheck))->toBeTrue();
+});
+
+test('the incomplete-media agenda redispatch is throttled to roughly once per window', function (): void {
+    Bus::fake();
+
+    // Raad zónder kanaal → direct notule-pad; net plaatsgevonden, ruim vóór de deadline.
+    $muni = Municipality::factory()->create(['launch_date' => now()->subYear(), 'settings' => []]);
+    $m = Meeting::factory()->summarizable()->create([
+        'municipality_id' => $muni->id,
+        'type' => MeetingType::Council->value,
+        'starts_at' => now()->subHour(),
+        'agenda_ingested_at' => now(),
+    ]);
+    // Incomplete media: agendapunt zonder opgehaalde bijlagen.
+    AgendaItem::factory()->create(['meeting_id' => $m->id, 'attachments_fetched_at' => null]);
+
+    app(ResolveMeetingSummarySources::class)->handle($m->fresh());
+    $firstCheck = $m->fresh()->notule_checked_at;
+    expect($firstCheck)->not->toBeNull();
+    Bus::assertDispatchedTimes(IngestMeetingAgendaJob::class, 1);
+
+    // Binnen het venster → geen extra redispatch.
+    Carbon::setTestNow($firstCheck->copy()->addHour());
+    app(ResolveMeetingSummarySources::class)->handle($m->fresh());
+    Bus::assertDispatchedTimes(IngestMeetingAgendaJob::class, 1);
+
+    // Voorbij het venster → nieuwe cyclus, mét ververste timestamp (geen lek).
+    Carbon::setTestNow($firstCheck->copy()->addHours(21));
+    app(ResolveMeetingSummarySources::class)->handle($m->fresh());
+    $secondCheck = $m->fresh()->notule_checked_at;
+    expect($secondCheck->greaterThan($firstCheck))->toBeTrue();
+    Bus::assertDispatchedTimes(IngestMeetingAgendaJob::class, 2);
+
+    // Direct nog een sweep binnen het nieuwe venster → géén derde redispatch.
+    Carbon::setTestNow($secondCheck->copy()->addHour());
+    app(ResolveMeetingSummarySources::class)->handle($m->fresh());
+    Bus::assertDispatchedTimes(IngestMeetingAgendaJob::class, 2);
+});
+
+test('a final post-deadline recheck runs before the meeting is skipped as no_source', function (): void {
+    Bus::fake();
+    NotuleDetectionAgent::fake([[
+        'is_notule_present' => false,
+        'media_object_id' => null,
+        'confidence' => 0,
+    ]]);
+
+    $muni = Municipality::factory()->create(['launch_date' => now()->subYear(), 'settings' => []]);
+    $m = Meeting::factory()->summarizable()->create([
+        'municipality_id' => $muni->id,
+        'type' => MeetingType::Council->value,
+        'starts_at' => now()->subDays(2),
+        'agenda_ingested_at' => now(),
+    ]);
+    $item = AgendaItem::factory()->create(['meeting_id' => $m->id, 'attachments_fetched_at' => now()]);
+    MediaObject::factory()->create(['agenda_item_id' => $item->id, 'name' => 'Stuk']);
+
+    $deadline = $m->starts_at->copy()->addWeekdays(2);
+    // Laatste recheck lag net vóór de deadline.
+    $m->update(['notule_checked_at' => $deadline->copy()->subHour()]);
+
+    // Sweep die de deadline overschrijdt: NIET meteen no_source, wel een post-deadline recheck.
+    Carbon::setTestNow($deadline->copy()->addMinute());
+    app(ResolveMeetingSummarySources::class)->handle($m->fresh());
+    expect($m->fresh()->summary_skipped_reason)->toBeNull();
+    expect($m->fresh()->notule_checked_at->greaterThanOrEqualTo($deadline))->toBeTrue();
+
+    // Volgende sweep: de post-deadline recheck leverde niets op → nu pas no_source.
+    app(ResolveMeetingSummarySources::class)->handle($m->fresh());
+    expect($m->fresh()->summary_skipped_reason)->toBe(Meeting::SKIP_NO_SOURCE);
 });

@@ -75,17 +75,38 @@ class ResolveMeetingSummarySources
             }
         }
 
-        // 2) Notule-pad
+        // 2) Notule-pad — transcript niet (meer) beschikbaar.
         if ($meeting->notule_detected_at !== null) {
             $this->summarizeWith($meeting, Meeting::SOURCE_NOTULE);
 
             return;
         }
 
-        // Throttle: AI-detectie + agenda-redispatch hooguit eens per N uur draaien.
-        $due = $this->notuleCheckDue($meeting);
+        // Skip naar no_source ALLEEN wanneer er minstens één recheck-cyclus op/na de
+        // werkdag-deadline draaide en niets opleverde. `notule_checked_at >= deadline`
+        // impliceert dat now() ook voorbij de deadline is.
+        if ($meeting->notule_checked_at !== null
+            && $meeting->notule_checked_at->greaterThanOrEqualTo($deadline)) {
+            $meeting->update(['summary_skipped_reason' => Meeting::SKIP_NO_SOURCE]);
+            $this->log->handle($meeting, 'resolve', 'warning', 'Geen bron (transcript/notule) — meeting zonder samenvatting vastgelegd');
 
-        if ($due && $this->mediaComplete($meeting)) {
+            return;
+        }
+
+        // Een recheck-cyclus is 'due' wanneer het throttle-venster verstreken is, óf
+        // wanneer we voorbij de deadline zijn zonder dat er al een post-deadline recheck
+        // draaide: dan forceren we één laatste cyclus vóór we mogen skippen.
+        $due = $this->notuleCheckDue($meeting) || now()->greaterThanOrEqualTo($deadline);
+
+        if (! $due) {
+            return; // binnen throttle-venster én vóór de deadline → wachten
+        }
+
+        // Markeer de recheck-cyclus (begrenst zowel de AI-call als de agenda-redispatch
+        // tot ~1x per venster, en levert de post-deadline timestamp die de skip vrijgeeft).
+        $meeting->update(['notule_checked_at' => now()]);
+
+        if ($this->mediaComplete($meeting)) {
             $this->detectNotule->handle($meeting);
             $meeting->refresh();
             if ($meeting->notule_detected_at !== null) {
@@ -95,24 +116,8 @@ class ResolveMeetingSummarySources
             }
         }
 
-        // 3) Geen bron → begrensde werkdag-rechecks
-        if (now()->greaterThanOrEqualTo($deadline)) {
-            $meeting->update(['summary_skipped_reason' => Meeting::SKIP_NO_SOURCE]);
-            $this->log->handle($meeting, 'resolve', 'warning', 'Geen bron (transcript/notule) — meeting zonder samenvatting vastgelegd');
-
-            return;
-        }
-
-        // Notule kan later in ORI verschijnen → agenda opnieuw ophalen, maar alleen
-        // wanneer de recheck 'due' is (anders elke 15-min-sweep opnieuw).
-        if ($due) {
-            IngestMeetingAgendaJob::dispatch($meeting->id);
-            // Markeer de recheck ook wanneer media nog niet compleet was (en
-            // DetectMeetingNotule dus niet draaide).
-            if ($meeting->notule_checked_at === null) {
-                $meeting->update(['notule_checked_at' => now()]);
-            }
-        }
+        // Geen notule (nog) → agenda opnieuw ophalen; een notule kan later in ORI verschijnen.
+        IngestMeetingAgendaJob::dispatch($meeting->id);
     }
 
     private function notuleCheckDue(Meeting $meeting): bool
