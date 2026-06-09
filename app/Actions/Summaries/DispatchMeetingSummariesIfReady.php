@@ -10,12 +10,12 @@ class DispatchMeetingSummariesIfReady
 {
     /**
      * Dispatcht de meeting-samenvattingen uitsluitend wanneer (a) alle media binnen
-     * is én (b) de transcript-resolutie klaar is (transcript binnen, of definitief
-     * opgegeven). Re-entrant en idempotent: zowel de media-ingest als de
-     * video-pijplijn roepen dit aan; pas wanneer beide condities waar zijn dispatcht
-     * het, één keer per SummaryLevel. De exact-één-keer-garantie ná dispatch leeft
-     * in de bestaande samenvat-dispatch-fix (die `summarized_at` zet); deze gate
-     * voegt daar de transcript-resolutie-conditie aan toe.
+     * is én (b) een bron is geresolveerd (transcript óf notule) door
+     * ResolveMeetingSummarySources, zichtbaar als een gezette `summary_source`.
+     * Re-entrant en idempotent: zowel de media-ingest als de video-pijplijn lopen via
+     * de resolver, die deze gate aanroept; pas wanneer beide condities waar zijn
+     * dispatcht het, één keer per SummaryLevel. De exact-één-keer-garantie ná dispatch
+     * leeft in de bestaande samenvat-dispatch-fix (die `summarized_at` zet).
      */
     public function handle(Meeting $meeting): void
     {
@@ -31,8 +31,8 @@ class DispatchMeetingSummariesIfReady
             return;
         }
 
-        // (b) Transcript-resolutie klaar (transcript binnen of definitief opgegeven).
-        if (! $meeting->transcriptResolved()) {
+        // (b) Een bron is geresolveerd (transcript óf notule) door ResolveMeetingSummarySources.
+        if ($meeting->summary_source === null) {
             return;
         }
 
