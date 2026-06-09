@@ -34,21 +34,26 @@ class ResolveMeetingSummarySources
         );
         $beforeDeadline = now()->lessThan($deadline);
 
+        // 0) Transcript-wint: een reeds getranscribeerde video is een geldige bron voor
+        // ELKE summarizable meeting, ongeacht type of kanaal. Dit staat bewust boven
+        // het council+channel-blok zodat ook commissie-/'other'-meetings samenvatten.
+        if ($meeting->video?->status === VideoStatus::Transcribed) {
+            $this->resolveWithSource($meeting, Meeting::SOURCE_TRANSCRIPT);
+
+            return;
+        }
+
         $channelId = $meeting->municipality->settings['youtube_channel_id'] ?? null;
         $isCouncilWithChannel = $meeting->type === MeetingType::Council && $channelId !== null;
 
-        // 1) Transcript-pad
+        // 1) Transcript-pad: 24u-wacht + actieve videozoektocht voor council+channel
+        // meetings die nog géén transcript hebben.
         if ($isCouncilWithChannel) {
             if (now()->lessThan($meeting->videoReadyAt())) {
                 return; // video staat nog niet online (24u-venster blijft ongemoeid)
             }
 
             $video = $meeting->video;
-            if ($video?->status === VideoStatus::Transcribed) {
-                $this->summarizeWith($meeting, Meeting::SOURCE_TRANSCRIPT);
-
-                return;
-            }
 
             // Wacht op handmatige bevestiging — maar alléén tot de deadline, anders
             // blijft de meeting eeuwig hangen als niemand bevestigt.
@@ -77,7 +82,7 @@ class ResolveMeetingSummarySources
 
         // 2) Notule-pad — transcript niet (meer) beschikbaar.
         if ($meeting->notule_detected_at !== null) {
-            $this->summarizeWith($meeting, Meeting::SOURCE_NOTULE);
+            $this->resolveWithSource($meeting, Meeting::SOURCE_NOTULE);
 
             return;
         }
@@ -110,7 +115,7 @@ class ResolveMeetingSummarySources
             $this->detectNotule->handle($meeting);
             $meeting->refresh();
             if ($meeting->notule_detected_at !== null) {
-                $this->summarizeWith($meeting, Meeting::SOURCE_NOTULE);
+                $this->resolveWithSource($meeting, Meeting::SOURCE_NOTULE);
 
                 return;
             }
@@ -131,13 +136,30 @@ class ResolveMeetingSummarySources
         return $meeting->notule_checked_at->lessThan(now()->subHours($throttleHours));
     }
 
-    private function summarizeWith(Meeting $meeting, string $source): void
+    private function resolveWithSource(Meeting $meeting, string $source): void
     {
         if ($meeting->summary_source === null) {
             $meeting->update(['summary_source' => $source, 'source_resolved_at' => now()]);
         }
 
+        // Nog ontbrekende bijlagen (een agendapunt zonder opgehaalde attachments)?
+        // Haal ze (throttled) alsnog op en wacht — NIET skippen. Zodra de media
+        // compleet is, dispatcht de gate de samenvattingen.
+        if ($this->hasPendingMedia($meeting)) {
+            if ($this->notuleCheckDue($meeting)) {
+                $meeting->update(['notule_checked_at' => now()]);
+                IngestMeetingAgendaJob::dispatch($meeting->id);
+            }
+
+            return;
+        }
+
         $this->dispatchSummaries->handle($meeting->fresh());
+    }
+
+    private function hasPendingMedia(Meeting $meeting): bool
+    {
+        return $meeting->agendaItems()->whereNull('attachments_fetched_at')->exists();
     }
 
     private function mediaComplete(Meeting $meeting): bool

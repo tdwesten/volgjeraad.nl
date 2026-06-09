@@ -76,6 +76,47 @@ test('a transcribed video resolves the transcript source and dispatches summarie
     Bus::assertDispatchedTimes(SummarizeMeetingJob::class, count(SummaryLevel::cases()));
 });
 
+test('a transcribed video is a valid source for a non-council meeting too', function (): void {
+    Bus::fake();
+    $muni = Municipality::factory()->create(['launch_date' => now()->subYear(), 'settings' => []]);
+    $m = Meeting::factory()->summarizable()->create([
+        'municipality_id' => $muni->id,
+        'type' => MeetingType::Other->value,
+        'starts_at' => now()->subDays(2),
+        'agenda_ingested_at' => now(),
+    ]);
+    $item = AgendaItem::factory()->create(['meeting_id' => $m->id, 'attachments_fetched_at' => now()]);
+    MediaObject::factory()->create(['agenda_item_id' => $item->id]);
+    MeetingVideo::factory()->transcribed()->create(['meeting_id' => $m->id]);
+
+    app(ResolveMeetingSummarySources::class)->handle($m->fresh());
+
+    expect($m->fresh()->summary_source)->toBe(Meeting::SOURCE_TRANSCRIPT);
+    expect($m->fresh()->summary_skipped_reason)->toBeNull();
+    Bus::assertDispatchedTimes(SummarizeMeetingJob::class, count(SummaryLevel::cases()));
+});
+
+test('a transcribed video with incomplete media records the source and re-ingests without skipping', function (): void {
+    Bus::fake();
+    $muni = Municipality::factory()->create(['launch_date' => now()->subYear(), 'settings' => []]);
+    $m = Meeting::factory()->summarizable()->create([
+        'municipality_id' => $muni->id,
+        'type' => MeetingType::Other->value,
+        'starts_at' => now()->subDays(2),
+        'agenda_ingested_at' => now(),
+    ]);
+    // Media nog incompleet: een agendapunt zonder opgehaalde bijlagen.
+    AgendaItem::factory()->create(['meeting_id' => $m->id, 'attachments_fetched_at' => null]);
+    MeetingVideo::factory()->transcribed()->create(['meeting_id' => $m->id]);
+
+    app(ResolveMeetingSummarySources::class)->handle($m->fresh());
+
+    expect($m->fresh()->summary_source)->toBe(Meeting::SOURCE_TRANSCRIPT);
+    expect($m->fresh()->summary_skipped_reason)->toBeNull();
+    Bus::assertDispatched(IngestMeetingAgendaJob::class);
+    Bus::assertNotDispatched(SummarizeMeetingJob::class);
+});
+
 test('a detected notule resolves the notule source', function (): void {
     Bus::fake();
     $m = channelCouncilMeeting('-2 days');
