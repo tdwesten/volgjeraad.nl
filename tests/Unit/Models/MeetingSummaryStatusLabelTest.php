@@ -10,10 +10,20 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-test('returns Geen when no summaries and type is not council', function (): void {
+test('returns Wacht op verwerking for a summarizable meeting awaiting a source', function (): void {
     $meeting = Meeting::factory()->create([
         'type' => MeetingType::Committee->value,
         'ingest_mode' => IngestMode::Summarize->value,
+    ]);
+
+    // Summarizable, nog geen bron geresolveerd en geen samenvatting → wacht op verwerking.
+    expect($meeting->summaryStatusLabel())->toBe('Wacht op verwerking');
+});
+
+test('returns Geen when no summaries and the meeting is not summarizable', function (): void {
+    $meeting = Meeting::factory()->create([
+        'type' => MeetingType::Committee->value,
+        'ingest_mode' => IngestMode::MetadataOnly->value,
     ]);
 
     expect($meeting->summaryStatusLabel())->toBe('Geen');

@@ -170,7 +170,7 @@ test('show exposes the plain teaser per meeting', function (): void {
         );
 });
 
-test('show returns geen for non-council meeting without summaries', function (): void {
+test('show returns wacht op verwerking for a summarizable meeting without summaries', function (): void {
     $admin = User::factory()->create(['is_admin' => true]);
     $municipality = Municipality::factory()->create();
     Meeting::factory()->create([
@@ -184,6 +184,6 @@ test('show returns geen for non-council meeting without summaries', function ():
         ->get("/admin/municipalities/{$municipality->id}")
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->where('meetings.0.summary_status', 'Geen')
+            ->where('meetings.0.summary_status', 'Wacht op verwerking')
         );
 });

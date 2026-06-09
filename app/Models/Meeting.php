@@ -72,35 +72,6 @@ class Meeting extends Model
         return $this->hasOne(MeetingVideo::class);
     }
 
-    /**
-     * Is de transcript-resolutie klaar? Dat is zo wanneer er geen transcript wordt
-     * verwacht (niet-raad), het transcript binnen is (Transcribed), het definitief is
-     * opgegeven (Failed op de attempt-limiet), of de wachttijd is verstreken. De
-     * lifecycle-gate (DispatchMeetingSummariesIfReady) leunt hierop.
-     */
-    public function transcriptResolved(): bool
-    {
-        if ($this->type !== MeetingType::Council) {
-            return true;
-        }
-
-        $video = $this->video;
-
-        if ($video?->status === VideoStatus::Transcribed) {
-            return true;
-        }
-
-        if ($video?->status === VideoStatus::Failed
-            && $video->transcript_attempts >= (int) config('volgjeraad.youtube.max_transcript_attempts')) {
-            return true;
-        }
-
-        $waitDays = (int) config('volgjeraad.youtube.transcript_wait_days');
-
-        return $this->starts_at !== null
-            && now()->greaterThanOrEqualTo($this->starts_at->copy()->addDays($waitDays));
-    }
-
     /** @return HasOne<Newsletter, $this> */
     public function newsletter(): HasOne
     {
@@ -187,7 +158,11 @@ class Meeting extends Model
             : $this->summaries()->get();
 
         if ($summaries->isEmpty()) {
-            if ($this->type === MeetingType::Council && ! $this->transcriptResolved()) {
+            if ($this->summary_skipped_reason !== null) {
+                return 'Geen';
+            }
+
+            if ($this->shouldSummarize() && $this->processingStatus() !== MeetingProcessingStatus::Published) {
                 return 'Wacht op verwerking';
             }
 
