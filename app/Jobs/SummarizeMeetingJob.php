@@ -40,9 +40,18 @@ class SummarizeMeetingJob implements ShouldQueue
                 ->exists()
         );
 
-        if ($allDone && $meeting->newsletter === null) {
-            Log::info('Alle samenvatting-niveaus klaar, nieuwsbrief samenstellen', ['meeting_id' => $this->meetingId]);
-            dispatch(new ComposeNewsletterJob($meeting->id));
+        if ($allDone) {
+            // Markeer de meeting als samengevat zodra alle niveaus bestaan, zodat de
+            // 15-min-sweep en DispatchMeetingSummariesIfReady niet elke cyclus opnieuw
+            // SummarizeMeetingJobs dispatchen voor een al-samengevatte meeting.
+            if ($meeting->summarized_at === null) {
+                $meeting->update(['summarized_at' => now()]);
+            }
+
+            if ($meeting->newsletter === null) {
+                Log::info('Alle samenvatting-niveaus klaar, nieuwsbrief samenstellen', ['meeting_id' => $this->meetingId]);
+                dispatch(new ComposeNewsletterJob($meeting->id));
+            }
         }
 
         Log::info('SummarizeMeetingJob klaar', [

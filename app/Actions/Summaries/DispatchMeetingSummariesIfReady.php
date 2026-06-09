@@ -15,7 +15,8 @@ class DispatchMeetingSummariesIfReady
      * Re-entrant en idempotent: zowel de media-ingest als de video-pijplijn lopen via
      * de resolver, die deze gate aanroept; pas wanneer beide condities waar zijn
      * dispatcht het, één keer per SummaryLevel. De exact-één-keer-garantie ná dispatch
-     * leeft in de bestaande samenvat-dispatch-fix (die `summarized_at` zet).
+     * komt van `summarized_at`: zodra alle niveaus klaar zijn zet SummarizeMeetingJob
+     * dat veld, waarna deze gate (en de 15-min-sweep) niets meer dispatchen.
      */
     public function handle(Meeting $meeting): void
     {

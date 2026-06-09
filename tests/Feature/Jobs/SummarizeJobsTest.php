@@ -48,6 +48,10 @@ test('SummarizeMeetingJob dispatches ComposeNewsletterJob when all summary level
     $job->handle($action);
 
     Bus::assertDispatched(ComposeNewsletterJob::class, fn ($j) => $j->meetingId === $meeting->id);
+
+    // Alle niveaus klaar → de meeting is gemarkeerd als samengevat zodat de sweep/gate
+    // niet elke cyclus opnieuw SummarizeMeetingJobs dispatcht.
+    expect($meeting->fresh()->summarized_at)->not->toBeNull();
 });
 
 test('SummarizeMeetingJob does not dispatch ComposeNewsletterJob when not all levels done', function (): void {
@@ -66,4 +70,7 @@ test('SummarizeMeetingJob does not dispatch ComposeNewsletterJob when not all le
     $job->handle($action);
 
     Bus::assertNotDispatched(ComposeNewsletterJob::class);
+
+    // Nog niet alle niveaus klaar → meeting nog niet als samengevat gemarkeerd.
+    expect($meeting->fresh()->summarized_at)->toBeNull();
 });
