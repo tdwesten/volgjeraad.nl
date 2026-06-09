@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Public;
 
 use App\Enums\SummaryStatus;
 use App\Http\Controllers\Controller;
+use App\Models\Meeting;
 use App\Models\Municipality;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -13,18 +14,25 @@ class MunicipalityController extends Controller
     public function show(Municipality $municipality): Response
     {
         $meetings = $municipality->meetings()
-            ->whereHas('summaries', fn ($q) => $q->where('status', SummaryStatus::Published))
-            ->with(['summaries' => fn ($q) => $q->where('status', SummaryStatus::Published)])
+            ->with(['municipality', 'video', 'summaries' => fn ($q) => $q->where('status', SummaryStatus::Published)])
+            ->where(function ($q): void {
+                $q->whereHas('summaries', fn ($s) => $s->where('status', SummaryStatus::Published))
+                    ->orWhere('starts_at', '<=', now());
+            })
             ->orderByDesc('starts_at')
             ->limit(20)
-            ->get();
+            ->get()
+            ->filter(fn (Meeting $m) => $m->processingStatus()->isPubliclyVisible())
+            ->values();
 
         return Inertia::render('Municipality/Show', [
             'municipality' => $municipality->only('id', 'slug', 'name'),
-            'meetings' => $meetings->map(fn ($meeting) => [
+            'meetings' => $meetings->map(fn (Meeting $meeting) => [
                 'id' => $meeting->id,
                 'name' => $meeting->name,
                 'starts_at' => $meeting->starts_at?->toIso8601String(),
+                'processing_status' => $meeting->processingStatus()->value,
+                'status_message' => $meeting->processingStatus()->publicMessage(),
                 'summaries' => $meeting->summaries->map(fn ($s) => [
                     'id' => $s->id,
                     'level' => $s->level->value,
