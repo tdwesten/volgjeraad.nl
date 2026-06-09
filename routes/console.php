@@ -1,7 +1,7 @@
 <?php
 
 use App\Jobs\IngestMunicipalityMeetingsJob;
-use App\Jobs\MatchMeetingVideosJob;
+use App\Jobs\ResolveReadyMeetingsJob;
 use App\Models\Municipality;
 use App\Models\MunicipalityRequest;
 use Illuminate\Support\Facades\Schedule;
@@ -18,9 +18,9 @@ Schedule::call(function () {
     ->name('volgjeraad:ingest')
     ->withoutOverlapping();
 
-Schedule::job(new MatchMeetingVideosJob)
-    ->dailyAt('06:30')
-    ->name('volgjeraad:match-videos')
+Schedule::job(new ResolveReadyMeetingsJob)
+    ->everyFifteenMinutes()
+    ->name('volgjeraad:resolve')
     ->withoutOverlapping();
 
 Schedule::command('model:prune', ['--model' => [MunicipalityRequest::class]])
