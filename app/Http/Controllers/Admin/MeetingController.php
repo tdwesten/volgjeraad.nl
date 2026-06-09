@@ -90,6 +90,7 @@ class MeetingController extends Controller
             ],
             'standardSummary' => $summaryArray($summariesByLevel->get('standard')),
             'simpleSummary' => $summaryArray($summariesByLevel->get('simple')),
+            'plainSummary' => $summaryArray($summariesByLevel->get('plain')),
             'newsletter' => $newsletter ? [
                 'id' => $newsletter->id,
                 'subject' => $newsletter->subject,

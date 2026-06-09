@@ -91,6 +91,7 @@ interface Props {
     meeting: MeetingData;
     standardSummary: SummaryItem | null;
     simpleSummary: SummaryItem | null;
+    plainSummary: SummaryItem | null;
     newsletter: Newsletter | null;
     sources: Sources;
     agendaItems: AgendaItemData[];
@@ -258,6 +259,7 @@ export default function AdminMeetingShow({
     meeting,
     standardSummary,
     simpleSummary,
+    plainSummary,
     newsletter,
     sources,
     agendaItems,
@@ -268,7 +270,7 @@ export default function AdminMeetingShow({
     const { post: postRegenerate, processing: regenerating } = useForm({});
 
     const isProcessing = newsletter === null && sources.summary_skipped_reason === null;
-    const { start, stop } = usePoll(4000, { only: ['logs', 'standardSummary', 'simpleSummary', 'newsletter', 'meeting', 'sources', 'video', 'agendaItems'] }, { autoStart: false });
+    const { start, stop } = usePoll(4000, { only: ['logs', 'standardSummary', 'simpleSummary', 'plainSummary', 'newsletter', 'meeting', 'sources', 'video', 'agendaItems'] }, { autoStart: false });
 
     useEffect(() => {
         if (isProcessing) {
@@ -289,7 +291,7 @@ export default function AdminMeetingShow({
         postRegenerate(`/admin/review/${meeting.id}/regenerate`);
     };
 
-    const hasSummaries = standardSummary !== null || simpleSummary !== null;
+    const hasSummaries = standardSummary !== null || simpleSummary !== null || plainSummary !== null;
     const sourceLinks = agendaItems.flatMap((item) => item.mediaObjects.filter((m) => m.url || m.original_url));
 
     return (
@@ -371,6 +373,13 @@ export default function AdminMeetingShow({
                             ) : (
                                 <div className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
                                     Geen B1-samenvatting
+                                </div>
+                            )}
+                            {plainSummary ? (
+                                <EditableSummaryCard summary={plainSummary} label="Korte samenvatting" />
+                            ) : (
+                                <div className="rounded-lg border border-dashed border-border p-4 text-sm text-muted-foreground">
+                                    Geen korte samenvatting
                                 </div>
                             )}
                         </div>

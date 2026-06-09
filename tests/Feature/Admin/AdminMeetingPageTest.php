@@ -85,6 +85,7 @@ test('the admin meeting page exposes status, draft summaries, sources and logs',
             ->where('standardSummary.title', 'Concept titel')
             ->where('standardSummary.status', 'draft')
             ->where('simpleSummary', null)
+            ->where('plainSummary', null)
             ->has('agendaItems', 1)
             ->has('agendaItems.0.mediaObjects', 1)
             ->has('logs', 1)
