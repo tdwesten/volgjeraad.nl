@@ -24,6 +24,12 @@
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="CACHE_STORE" value="array"/>
         <env name="VOLGJERAAD_MODEL_PRICES_REMOTE" value="false"/>
+        <env name="INERTIA_SSR_ENABLED" value="false"/>
+        <env name="OPENAI_API_KEY" value=""/>
+        <env name="ANTHROPIC_API_KEY" value=""/>
+        <env name="GEMINI_API_KEY" value=""/>
+        <env name="YOUTUBE_API_KEY" value=""/>
+        <env name="SUPADATA_API_KEY" value=""/>
         <env name="DB_CONNECTION" value="sqlite"/>
         <env name="DB_DATABASE" value=":memory:"/>
         <env name="DB_URL" value=""/>
