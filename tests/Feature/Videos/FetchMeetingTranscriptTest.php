@@ -6,6 +6,7 @@ use App\Enums\VideoStatus;
 use App\Jobs\SummarizeMeetingJob;
 use App\Models\Meeting;
 use App\Models\MeetingVideo;
+use App\Models\Municipality;
 use App\Services\Transcript\TranscriptProvider;
 use App\Services\Transcript\TranscriptResult;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -16,9 +17,27 @@ uses(RefreshDatabase::class);
 beforeEach(function (): void {
     config([
         'volgjeraad.youtube.max_transcript_attempts' => 4,
-        'volgjeraad.youtube.transcript_wait_days' => 7,
+        'volgjeraad.youtube.video_wait_hours' => 24,
+        'volgjeraad.youtube.notule_recheck_working_days' => 2,
     ]);
 });
+
+/**
+ * Raadsvergadering mét YouTube-kanaal, ruim voorbij het 24u-videovenster, zodat de
+ * resolver het transcript als bron erkent zodra de video is getranscribeerd.
+ */
+function channelTranscriptMeeting(string $startsAt = '-2 days'): Meeting
+{
+    $muni = Municipality::factory()->create([
+        'launch_date' => now()->subYear(),
+        'settings' => ['youtube_channel_id' => 'UC123'],
+    ]);
+
+    return Meeting::factory()->council()->summarizable()->create([
+        'municipality_id' => $muni->id,
+        'starts_at' => now()->parse($startsAt),
+    ]);
+}
 
 test('stores transcript, sets transcribed status and dispatches re-summarize per level', function (): void {
     Bus::fake();
@@ -29,7 +48,7 @@ test('stores transcript, sets transcribed status and dispatches re-summarize per
         ->with('dQw4w9WgXcQ', 'nl')
         ->andReturn(new TranscriptResult('Voorzitter: open.', 'supadata:auto', 'nl'));
 
-    $meeting = Meeting::factory()->council()->summarizable()->create(['starts_at' => now()->subDay()]);
+    $meeting = channelTranscriptMeeting();
     $video = MeetingVideo::factory()->create([
         'meeting_id' => $meeting->id,
         'youtube_video_id' => 'dQw4w9WgXcQ',
@@ -47,7 +66,7 @@ test('stores transcript, sets transcribed status and dispatches re-summarize per
     expect($video->transcript_error)->toBeNull();
     expect($video->transcript_attempts)->toBe(1);
 
-    // Transcript binnen → de gate ziet de meeting als resolved en dispatcht per level.
+    // Transcript binnen → de resolver zet SOURCE_TRANSCRIPT en dispatcht per level.
     Bus::assertDispatched(SummarizeMeetingJob::class, fn ($job) => $job->level === SummaryLevel::Standard);
     Bus::assertDispatched(SummarizeMeetingJob::class, fn ($job) => $job->level === SummaryLevel::Simple);
     Bus::assertDispatchedTimes(SummarizeMeetingJob::class, count(SummaryLevel::cases()));
@@ -61,8 +80,8 @@ test('provider failure sets failed status with error, increments transcript_atte
         ->once()
         ->andThrow(new RuntimeException('vendor down'));
 
-    // Council + recent → binnen de wachttijd en onder de attempt-limiet, dus nog niet resolved.
-    $meeting = Meeting::factory()->council()->summarizable()->create(['starts_at' => now()->subDay()]);
+    // Council + recent → onder de attempt-limiet, dus nog geen bron geresolveerd.
+    $meeting = channelTranscriptMeeting();
     $video = MeetingVideo::factory()->create([
         'meeting_id' => $meeting->id,
         'youtube_video_id' => 'dQw4w9WgXcQ',
@@ -79,7 +98,7 @@ test('provider failure sets failed status with error, increments transcript_atte
     Bus::assertNotDispatched(SummarizeMeetingJob::class);
 });
 
-test('failed transcript at the attempt limit resolves and dispatches a PDF-only summary', function (): void {
+test('failed transcript at the attempt limit resolves no transcript source and dispatches no summary', function (): void {
     Bus::fake();
 
     $this->mock(TranscriptProvider::class)
@@ -87,7 +106,8 @@ test('failed transcript at the attempt limit resolves and dispatches a PDF-only 
         ->once()
         ->andThrow(new RuntimeException('vendor down'));
 
-    $meeting = Meeting::factory()->council()->summarizable()->create(['starts_at' => now()->subDay()]);
+    // Video uitgeput zonder transcript én zonder notule → geen bron → geen samenvatting.
+    $meeting = channelTranscriptMeeting();
     $video = MeetingVideo::factory()->create([
         'meeting_id' => $meeting->id,
         'youtube_video_id' => 'dQw4w9WgXcQ',
@@ -98,10 +118,10 @@ test('failed transcript at the attempt limit resolves and dispatches a PDF-only 
     app(FetchMeetingTranscript::class)->handle($video);
 
     expect($video->fresh()->transcript_attempts)->toBe(4);
-    Bus::assertDispatchedTimes(SummarizeMeetingJob::class, count(SummaryLevel::cases()));
+    Bus::assertNotDispatched(SummarizeMeetingJob::class);
 });
 
-test('empty transcript flags empty_transcript and leaves PDF summary untouched within the window', function (): void {
+test('empty transcript flags empty_transcript and leaves the meeting unsummarized', function (): void {
     Bus::fake();
 
     $this->mock(TranscriptProvider::class)
@@ -109,7 +129,7 @@ test('empty transcript flags empty_transcript and leaves PDF summary untouched w
         ->once()
         ->andReturn(new TranscriptResult('', 'supadata:auto', 'nl'));
 
-    $meeting = Meeting::factory()->council()->summarizable()->create(['starts_at' => now()->subDay()]);
+    $meeting = channelTranscriptMeeting();
     $video = MeetingVideo::factory()->create([
         'meeting_id' => $meeting->id,
         'youtube_video_id' => 'dQw4w9WgXcQ',
@@ -133,7 +153,7 @@ test('reuses a cached transcript for the same youtube_video_id without calling t
     // Provider mag NIET worden aangeroepen: het transcript bestaat al elders.
     $this->mock(TranscriptProvider::class)->shouldReceive('fetch')->never();
 
-    $earlierMeeting = Meeting::factory()->council()->summarizable()->create(['starts_at' => now()->subWeek()]);
+    $earlierMeeting = channelTranscriptMeeting('-1 week');
     MeetingVideo::factory()->create([
         'meeting_id' => $earlierMeeting->id,
         'youtube_video_id' => 'dQw4w9WgXcQ',
@@ -144,7 +164,7 @@ test('reuses a cached transcript for the same youtube_video_id without calling t
         'transcript_attempts' => 1,
     ]);
 
-    $meeting = Meeting::factory()->council()->summarizable()->create(['starts_at' => now()->subDay()]);
+    $meeting = channelTranscriptMeeting();
     $video = MeetingVideo::factory()->create([
         'meeting_id' => $meeting->id,
         'youtube_video_id' => 'dQw4w9WgXcQ',
@@ -167,7 +187,7 @@ test('reuses the rows own transcript without calling the provider', function ():
 
     $this->mock(TranscriptProvider::class)->shouldReceive('fetch')->never();
 
-    $meeting = Meeting::factory()->council()->summarizable()->create(['starts_at' => now()->subDay()]);
+    $meeting = channelTranscriptMeeting();
     $video = MeetingVideo::factory()->create([
         'meeting_id' => $meeting->id,
         'youtube_video_id' => 'dQw4w9WgXcQ',
@@ -189,7 +209,7 @@ test('no youtube_video_id is a no-op', function (): void {
     Bus::fake();
     $this->mock(TranscriptProvider::class)->shouldReceive('fetch')->never();
 
-    $meeting = Meeting::factory()->council()->summarizable()->create();
+    $meeting = channelTranscriptMeeting();
     $video = MeetingVideo::factory()->create([
         'meeting_id' => $meeting->id,
         'youtube_video_id' => null,

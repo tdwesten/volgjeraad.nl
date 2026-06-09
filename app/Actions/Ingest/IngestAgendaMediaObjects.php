@@ -3,7 +3,7 @@
 namespace App\Actions\Ingest;
 
 use App\Actions\Logging\RecordProcessingEvent;
-use App\Actions\Summaries\DispatchMeetingSummariesIfReady;
+use App\Actions\Summaries\ResolveMeetingSummarySources;
 use App\Models\AgendaItem;
 use App\Models\MediaObject;
 use App\Services\Ori\OriClient;
@@ -14,7 +14,7 @@ class IngestAgendaMediaObjects
 {
     public function __construct(
         private OriClient $client,
-        private DispatchMeetingSummariesIfReady $dispatchMeetingSummaries,
+        private ResolveMeetingSummarySources $resolveSources,
         private RecordProcessingEvent $log,
     ) {}
 
@@ -70,6 +70,6 @@ class IngestAgendaMediaObjects
 
         $this->log->handle($meeting, 'media', 'success', 'Alle bijlagen opgehaald, samenvattingspijplijn gestart');
 
-        $this->dispatchMeetingSummaries->handle($meeting);
+        $this->resolveSources->handle($meeting);
     }
 }

@@ -3,7 +3,7 @@
 namespace App\Jobs;
 
 use App\Actions\Logging\RecordProcessingEvent;
-use App\Actions\Summaries\DispatchMeetingSummariesIfReady;
+use App\Actions\Summaries\ResolveMeetingSummarySources;
 use App\Actions\Videos\FetchMeetingTranscript;
 use App\Actions\Videos\FindMeetingVideo;
 use App\Enums\VideoStatus;
@@ -26,7 +26,7 @@ class ProcessMeetingVideoJob implements ShouldQueue
     public function handle(
         FindMeetingVideo $find,
         FetchMeetingTranscript $fetch,
-        DispatchMeetingSummariesIfReady $dispatchSummaries,
+        ResolveMeetingSummarySources $resolve,
         RecordProcessingEvent $log,
     ): void {
         Log::info('ProcessMeetingVideoJob gestart', ['meeting_id' => $this->meetingId]);
@@ -49,7 +49,7 @@ class ProcessMeetingVideoJob implements ShouldQueue
         // Wacht op menselijke bevestiging; mogelijk is de wachttijd verstreken → gate.
         if ($video?->status === VideoStatus::NeedsConfirmation) {
             $log->handle($meeting, 'video_match', 'warning', 'Video wacht op handmatige bevestiging');
-            $dispatchSummaries->handle($meeting);
+            $resolve->handle($meeting->fresh());
 
             return;
         }
@@ -57,7 +57,7 @@ class ProcessMeetingVideoJob implements ShouldQueue
         // Transcript definitief opgegeven (attempt-limiet) → gate (PDF-only indien klaar).
         if ($video?->status === VideoStatus::Failed && $video->transcript_attempts >= $maxAttempts) {
             $log->handle($meeting, 'video_match', 'warning', 'Transcript definitief opgegeven na '.$video->transcript_attempts.' pogingen');
-            $dispatchSummaries->handle($meeting);
+            $resolve->handle($meeting->fresh());
 
             return;
         }
@@ -73,7 +73,7 @@ class ProcessMeetingVideoJob implements ShouldQueue
 
         // Geen match → mogelijk wachttijd verstreken → gate (PDF-only indien klaar).
         $log->handle($meeting, 'video_match', 'info', 'Geen YouTube-video gevonden');
-        $dispatchSummaries->handle($meeting);
+        $resolve->handle($meeting->fresh());
     }
 
     /**

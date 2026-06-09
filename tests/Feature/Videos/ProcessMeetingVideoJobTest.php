@@ -1,7 +1,7 @@
 <?php
 
 use App\Actions\Logging\RecordProcessingEvent;
-use App\Actions\Summaries\DispatchMeetingSummariesIfReady;
+use App\Actions\Summaries\ResolveMeetingSummarySources;
 use App\Actions\Videos\FetchMeetingTranscript;
 use App\Actions\Videos\FindMeetingVideo;
 use App\Enums\VideoStatus;
@@ -28,7 +28,7 @@ test('matched video goes straight to transcript fetch', function (): void {
     $this->mock(FindMeetingVideo::class)->shouldReceive('handle')->never();
     $fetch = $this->mock(FetchMeetingTranscript::class);
     $fetch->shouldReceive('handle')->once()->with(Mockery::on(fn ($v) => $v->id === $video->id));
-    $dispatch = $this->mock(DispatchMeetingSummariesIfReady::class);
+    $dispatch = $this->mock(ResolveMeetingSummarySources::class);
     $dispatch->shouldReceive('handle')->never();
 
     app(ProcessMeetingVideoJob::class, ['meetingId' => $meeting->id])->handle($this->app->make(FindMeetingVideo::class), $fetch, $dispatch, app(RecordProcessingEvent::class));
@@ -46,7 +46,7 @@ test('failed transcript with a known video under the limit retries the fetch', f
     $this->mock(FindMeetingVideo::class)->shouldReceive('handle')->never();
     $fetch = $this->mock(FetchMeetingTranscript::class);
     $fetch->shouldReceive('handle')->once()->with(Mockery::on(fn ($v) => $v->id === $video->id));
-    $dispatch = $this->mock(DispatchMeetingSummariesIfReady::class);
+    $dispatch = $this->mock(ResolveMeetingSummarySources::class);
     $dispatch->shouldReceive('handle')->never();
 
     app(ProcessMeetingVideoJob::class, ['meetingId' => $meeting->id])->handle($this->app->make(FindMeetingVideo::class), $fetch, $dispatch, app(RecordProcessingEvent::class));
@@ -63,7 +63,7 @@ test('failed transcript at the attempt limit is skipped and re-evaluates the gat
 
     $this->mock(FindMeetingVideo::class)->shouldReceive('handle')->never();
     $this->mock(FetchMeetingTranscript::class)->shouldReceive('handle')->never();
-    $dispatch = $this->mock(DispatchMeetingSummariesIfReady::class);
+    $dispatch = $this->mock(ResolveMeetingSummarySources::class);
     $dispatch->shouldReceive('handle')->once()->with(Mockery::on(fn ($m) => $m->id === $meeting->id));
 
     app(ProcessMeetingVideoJob::class, ['meetingId' => $meeting->id])
@@ -80,7 +80,7 @@ test('needs_confirmation video awaits a human but still re-evaluates the gate', 
 
     $this->mock(FindMeetingVideo::class)->shouldReceive('handle')->never();
     $this->mock(FetchMeetingTranscript::class)->shouldReceive('handle')->never();
-    $dispatch = $this->mock(DispatchMeetingSummariesIfReady::class);
+    $dispatch = $this->mock(ResolveMeetingSummarySources::class);
     $dispatch->shouldReceive('handle')->once();
 
     app(ProcessMeetingVideoJob::class, ['meetingId' => $meeting->id])
@@ -99,7 +99,7 @@ test('meeting without a video searches, and a fresh match is transcribed in the 
     $find->shouldReceive('handle')->once()->with(Mockery::on(fn ($m) => $m->id === $meeting->id))->andReturn($matched);
     $fetch = $this->mock(FetchMeetingTranscript::class);
     $fetch->shouldReceive('handle')->once()->with($matched);
-    $dispatch = $this->mock(DispatchMeetingSummariesIfReady::class);
+    $dispatch = $this->mock(ResolveMeetingSummarySources::class);
     $dispatch->shouldReceive('handle')->never();
 
     app(ProcessMeetingVideoJob::class, ['meetingId' => $meeting->id])->handle($find, $fetch, $dispatch, app(RecordProcessingEvent::class));
@@ -117,7 +117,7 @@ test('not_found video re-searches and re-evaluates the gate when no match is fou
     $find = $this->mock(FindMeetingVideo::class);
     $find->shouldReceive('handle')->once()->andReturnNull();
     $this->mock(FetchMeetingTranscript::class)->shouldReceive('handle')->never();
-    $dispatch = $this->mock(DispatchMeetingSummariesIfReady::class);
+    $dispatch = $this->mock(ResolveMeetingSummarySources::class);
     $dispatch->shouldReceive('handle')->once();
 
     app(ProcessMeetingVideoJob::class, ['meetingId' => $meeting->id])
