@@ -29,6 +29,8 @@ interface Meeting {
     id: number;
     name: string | null;
     starts_at: string | null;
+    processing_status: string;
+    status_message: string;
     standard_summary: SummaryData | null;
     simple_summary: SummaryData | null;
 }
@@ -217,7 +219,9 @@ export default function MeetingShow({ municipality, meeting, agendaItems, video 
                 ) : (
                     <p className="flex items-center gap-2 text-muted-foreground">
                         <Clock className="h-4 w-4" />
-                        Nog geen samenvatting beschikbaar voor deze vergadering.
+                        {meeting.status_message !== ''
+                            ? meeting.status_message
+                            : 'Nog geen samenvatting beschikbaar voor deze vergadering.'}
                     </p>
                 )}
 

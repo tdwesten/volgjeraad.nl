@@ -14,6 +14,8 @@ interface Meeting {
     id: number;
     name: string | null;
     starts_at: string | null;
+    processing_status: string;
+    status_message: string;
     summaries: Summary[];
 }
 
@@ -77,10 +79,14 @@ export default function MunicipalityShow({ municipality, meetings }: Props): JSX
                                             })}
                                         </p>
                                     )}
-                                    {preview && (
-                                        <p className="line-clamp-3 text-sm text-muted-foreground">
-                                            {preview.body}
-                                        </p>
+                                    {meeting.summaries.length === 0 && meeting.status_message ? (
+                                        <p className="text-sm italic text-slate-500">{meeting.status_message}</p>
+                                    ) : (
+                                        preview && (
+                                            <p className="line-clamp-3 text-sm text-muted-foreground">
+                                                {preview.body}
+                                            </p>
+                                        )
                                     )}
                                     <Link
                                         href={`/${municipality.slug}/vergadering/${meeting.id}`}
