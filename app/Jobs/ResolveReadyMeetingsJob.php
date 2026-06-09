@@ -26,14 +26,9 @@ class ResolveReadyMeetingsJob implements ShouldQueue
             ->whereNull('summary_skipped_reason')
             ->whereNotNull('starts_at')
             ->where('starts_at', '<=', now())
-            ->select('id')
+            ->with(['municipality', 'video'])
             ->chunkById(100, function ($meetings) use ($resolve, &$resolved): void {
-                foreach ($meetings as $row) {
-                    $meeting = Meeting::with(['municipality', 'video'])->find($row->id);
-                    if ($meeting === null) {
-                        continue;
-                    }
-
+                foreach ($meetings as $meeting) {
                     try {
                         $resolve->handle($meeting);
                         $resolved++;
