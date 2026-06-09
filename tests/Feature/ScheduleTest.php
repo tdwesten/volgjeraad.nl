@@ -9,6 +9,7 @@ test('the resolve sweep is scheduled every fifteen minutes', function (): void {
 
     expect($resolve)->not->toBeNull();
     expect($resolve->expression)->toBe('*/15 * * * *');
+    expect($resolve->withoutOverlapping)->toBeTrue();
 });
 
 test('the old daily match-videos schedule is gone', function (): void {
