@@ -39,7 +39,8 @@ return [
         'max_transcript_attempts' => 4,
         // Hoe lang we met de vergadering-samenvatting wachten op een transcript voordat
         // we 'm zonder transcript maken (apart van max_find_days). 'Wachten vóór review'.
-        'transcript_wait_days' => 7,
+        'video_wait_hours' => 24,
+        'notule_recheck_working_days' => 2,
     ],
 
     'transcript' => [
