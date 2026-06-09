@@ -48,22 +48,36 @@ test('municipality show page renders with published summaries', function (): voi
 
 test('draft summaries do not leak on municipality show page', function (): void {
     $municipality = Municipality::factory()->create();
-    $meeting = Meeting::factory()->summarizable()->create(['municipality_id' => $municipality->id]);
+    // Expliciete starts_at in het verleden zodat de meeting deterministisch in de
+    // (sinds Taak 15 ook 'plaatsgevonden') publieke lijst valt.
+    $meeting = Meeting::factory()->summarizable()->create([
+        'municipality_id' => $municipality->id,
+        'starts_at' => now()->subDays(5),
+    ]);
     Summary::factory()->create([
         'summarizable_type' => Meeting::class,
         'summarizable_id' => $meeting->id,
         'municipality_id' => $municipality->id,
         'meeting_id' => $meeting->id,
         'status' => SummaryStatus::Draft->value,
+        'title' => 'LEKTITEL-CONCEPT',
+        'body' => 'LEKINHOUD-CONCEPT',
     ]);
 
-    $this->withoutVite()
-        ->get("/{$municipality->slug}")
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('Municipality/Show')
-            ->has('meetings', 0)
-        );
+    $response = $this->withoutVite()->get("/{$municipality->slug}")->assertOk();
+
+    // Nieuw gedrag: de plaatsgevonden meeting MAG in de lijst staan, maar met een
+    // statusregel i.p.v. de concept-samenvatting. De concept-INHOUD mag niet lekken.
+    $response->assertInertia(fn (Assert $page) => $page
+        ->component('Municipality/Show')
+        ->has('meetings', 1)
+        ->where('meetings.0.summaries', [])
+        ->where('meetings.0.status_message', fn ($value) => is_string($value) && $value !== '')
+    );
+
+    // Harde anti-leak-garantie: noch de concept-titel noch -inhoud zit in de respons.
+    expect($response->getContent())->not->toContain('LEKTITEL-CONCEPT');
+    expect($response->getContent())->not->toContain('LEKINHOUD-CONCEPT');
 });
 
 test('municipality archive page renders metadata-only meetings', function (): void {
