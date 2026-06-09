@@ -29,6 +29,11 @@ class RegenerateMeeting
             'ingest_mode' => IngestMode::Summarize->value,
             'summarized_at' => null,
             'agenda_ingested_at' => null,
+            'summary_source' => null,
+            'summary_skipped_reason' => null,
+            'notule_detected_at' => null,
+            'notule_checked_at' => null,
+            'notule_media_object_id' => null,
         ]);
 
         // Verwijder de agendapunten (cascade verwijdert media_objects) zodat

@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Meetings\RegenerateMeeting;
 use App\Jobs\IngestMeetingAgendaJob;
 use App\Models\AgendaItem;
 use App\Models\MediaObject;
@@ -52,6 +53,31 @@ test('admin can regenerate a meeting and summaries are deleted', function (): vo
     expect($meeting->fresh()->agenda_ingested_at)->toBeNull();
 
     Bus::assertDispatched(IngestMeetingAgendaJob::class, fn ($job) => $job->meetingId === $meeting->id);
+});
+
+test('regenerate resets the source-resolution fields', function (): void {
+    Bus::fake();
+
+    $municipality = Municipality::factory()->create();
+    $meeting = Meeting::factory()->summarizable()->create([
+        'municipality_id' => $municipality->id,
+        'summary_source' => 'transcript',
+        'summary_skipped_reason' => 'no_source',
+        'notule_detected_at' => now(),
+        'notule_checked_at' => now(),
+    ]);
+    $agendaItem = AgendaItem::factory()->create(['meeting_id' => $meeting->id]);
+    $media = MediaObject::factory()->create(['agenda_item_id' => $agendaItem->id]);
+    $meeting->update(['notule_media_object_id' => $media->id]);
+
+    app(RegenerateMeeting::class)->handle($meeting);
+
+    $fresh = $meeting->fresh();
+    expect($fresh->summary_source)->toBeNull();
+    expect($fresh->summary_skipped_reason)->toBeNull();
+    expect($fresh->notule_detected_at)->toBeNull();
+    expect($fresh->notule_checked_at)->toBeNull();
+    expect($fresh->notule_media_object_id)->toBeNull();
 });
 
 test('regenerate creates a processing log entry', function (): void {
