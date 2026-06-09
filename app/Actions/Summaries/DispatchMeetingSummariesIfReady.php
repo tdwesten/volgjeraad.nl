@@ -24,17 +24,22 @@ class DispatchMeetingSummariesIfReady
             return;
         }
 
-        // (a) Media compleet: geen agendapunt zonder opgehaalde bijlagen.
-        $pendingMedia = $meeting->agendaItems()
-            ->whereNull('attachments_fetched_at')
-            ->count();
-        if ($pendingMedia > 0) {
-            return;
-        }
-
         // (b) Een bron is geresolveerd (transcript óf notule) door ResolveMeetingSummarySources.
         if ($meeting->summary_source === null) {
             return;
+        }
+
+        // (a) Media compleet — vereist voor het notule-pad: de notule en agenda-tekst
+        // zitten ín de bijlagen. Een transcript is een zelfstandige bron en blokkeert
+        // NIET op nog-ontbrekende bijlagen; we summariseren met de beschikbare
+        // agenda-tekst plus het transcript.
+        if ($meeting->summary_source !== Meeting::SOURCE_TRANSCRIPT) {
+            $pendingMedia = $meeting->agendaItems()
+                ->whereNull('attachments_fetched_at')
+                ->count();
+            if ($pendingMedia > 0) {
+                return;
+            }
         }
 
         // Idempotency: niet opnieuw dispatchen als de meeting al samengevat is.

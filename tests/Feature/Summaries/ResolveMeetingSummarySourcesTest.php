@@ -96,7 +96,7 @@ test('a transcribed video is a valid source for a non-council meeting too', func
     Bus::assertDispatchedTimes(SummarizeMeetingJob::class, count(SummaryLevel::cases()));
 });
 
-test('a transcribed video with incomplete media records the source and re-ingests without skipping', function (): void {
+test('a transcribed video summarizes even with incomplete media (transcript is self-sufficient)', function (): void {
     Bus::fake();
     $muni = Municipality::factory()->create(['launch_date' => now()->subYear(), 'settings' => []]);
     $m = Meeting::factory()->summarizable()->create([
@@ -105,7 +105,8 @@ test('a transcribed video with incomplete media records the source and re-ingest
         'starts_at' => now()->subDays(2),
         'agenda_ingested_at' => now(),
     ]);
-    // Media nog incompleet: een agendapunt zonder opgehaalde bijlagen.
+    // Media nog incompleet: een agendapunt zonder opgehaalde bijlagen. Een transcript
+    // is een zelfstandige bron, dus dit mag de samenvatting NIET blokkeren.
     AgendaItem::factory()->create(['meeting_id' => $m->id, 'attachments_fetched_at' => null]);
     MeetingVideo::factory()->transcribed()->create(['meeting_id' => $m->id]);
 
@@ -113,8 +114,7 @@ test('a transcribed video with incomplete media records the source and re-ingest
 
     expect($m->fresh()->summary_source)->toBe(Meeting::SOURCE_TRANSCRIPT);
     expect($m->fresh()->summary_skipped_reason)->toBeNull();
-    Bus::assertDispatched(IngestMeetingAgendaJob::class);
-    Bus::assertNotDispatched(SummarizeMeetingJob::class);
+    Bus::assertDispatchedTimes(SummarizeMeetingJob::class, count(SummaryLevel::cases()));
 });
 
 test('a detected notule resolves the notule source', function (): void {

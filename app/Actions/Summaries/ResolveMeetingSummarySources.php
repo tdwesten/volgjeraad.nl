@@ -142,10 +142,11 @@ class ResolveMeetingSummarySources
             $meeting->update(['summary_source' => $source, 'source_resolved_at' => now()]);
         }
 
-        // Nog ontbrekende bijlagen (een agendapunt zonder opgehaalde attachments)?
-        // Haal ze (throttled) alsnog op en wacht — NIET skippen. Zodra de media
-        // compleet is, dispatcht de gate de samenvattingen.
-        if ($this->hasPendingMedia($meeting)) {
+        // Een transcript is een zelfstandige bron: niet blokkeren op incomplete
+        // agenda-media, gewoon summariseren (video aanwezig, geen notule nodig). Voor
+        // een notule-bron zit de tekst ín de bijlagen, dus daar wachten we wél tot de
+        // media binnen is: throttled ophalen en wachten — NIET skippen.
+        if ($source === Meeting::SOURCE_NOTULE && $this->hasPendingMedia($meeting)) {
             if ($this->notuleCheckDue($meeting)) {
                 $meeting->update(['notule_checked_at' => now()]);
                 IngestMeetingAgendaJob::dispatch($meeting->id);
