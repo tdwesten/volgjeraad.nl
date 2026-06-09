@@ -13,14 +13,6 @@ class MediaObject extends Model
     /** @use HasFactory<MediaObjectFactory> */
     use HasFactory;
 
-    protected $fillable = [
-        'agenda_item_id',
-        'position',
-        'name',
-        'file_name',
-        'ori_id',
-    ];
-
     protected $guarded = [];
 
     /**
