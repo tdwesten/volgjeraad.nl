@@ -7,6 +7,7 @@ use App\Ai\Agents\NotuleDetectionAgent;
 use App\Models\MediaObject;
 use App\Models\Meeting;
 use App\Support\PromptRepository;
+use Illuminate\Http\Client\StrayRequestException;
 use Illuminate\Support\Facades\Log;
 use Laravel\Ai\Enums\Lab;
 use Throwable;
@@ -44,6 +45,12 @@ class DetectMeetingNotule
                 provider: Lab::OpenAI,
                 model: $model,
             );
+        } catch (StrayRequestException $e) {
+            // Test-only: deze exceptie bestaat alléén onder Http::preventStrayRequests()
+            // (de hermetische testsuite). In productie komt 'ie nooit voor, dus dit is
+            // daar een no-op. We zwelgen 'm bewust NIET zodat een test die dit pad
+            // ongefaket raakt hard faalt i.p.v. stilletjes 'geen notule' te concluderen.
+            throw $e;
         } catch (Throwable $e) {
             Log::warning('detect_meeting_notule failed', [
                 'meeting_id' => $meeting->id,

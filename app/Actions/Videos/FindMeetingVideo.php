@@ -10,6 +10,7 @@ use App\Services\YouTube\VideoCandidate;
 use App\Services\YouTube\YouTubeClient;
 use App\Support\PromptRepository;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\Client\StrayRequestException;
 use Illuminate\Support\Facades\Log;
 use Laravel\Ai\Enums\Lab;
 use Throwable;
@@ -42,6 +43,10 @@ class FindMeetingVideo
 
         try {
             $candidates = $this->youTubeClient->searchChannel($channelId, $from, $to);
+        } catch (StrayRequestException $e) {
+            // Test-hermeticiteit: bestaat alléén onder Http::preventStrayRequests().
+            // Production-no-op; in tests faalt een ongefakete YouTube-call hard.
+            throw $e;
         } catch (Throwable $e) {
             Log::warning('find_meeting_video search failed', [
                 'meeting_id' => $meeting->id,

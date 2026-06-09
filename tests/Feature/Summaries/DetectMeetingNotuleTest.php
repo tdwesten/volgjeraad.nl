@@ -6,8 +6,19 @@ use App\Models\AgendaItem;
 use App\Models\MediaObject;
 use App\Models\Meeting;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\StrayRequestException;
 
 uses(RefreshDatabase::class);
+
+test('an unfaked notule detection is blocked by the hermetic guard and fails hard', function (): void {
+    // Bewust GEEN NotuleDetectionAgent::fake(): de hermetische suite
+    // (Http::preventStrayRequests) moet dit hard laten falen i.p.v. een echte
+    // OpenAI-call te doen of stilletjes 'geen notule' te concluderen.
+    [$meeting] = meetingWithDocs();
+
+    expect(fn () => app(DetectMeetingNotule::class)->handle($meeting))
+        ->toThrow(StrayRequestException::class);
+});
 
 beforeEach(fn () => config(['volgjeraad.ai.notule_confidence_threshold' => 70]));
 

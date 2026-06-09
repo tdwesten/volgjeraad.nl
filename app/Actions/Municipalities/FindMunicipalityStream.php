@@ -4,6 +4,7 @@ namespace App\Actions\Municipalities;
 
 use App\Ai\Agents\StreamFinderAgent;
 use App\Support\PromptRepository;
+use Illuminate\Http\Client\StrayRequestException;
 use Illuminate\Support\Facades\Log;
 use Laravel\Ai\Enums\Lab;
 use Throwable;
@@ -29,6 +30,10 @@ class FindMunicipalityStream
                 model: $model,
             );
             $structured = $response->structured ?? [];
+        } catch (StrayRequestException $e) {
+            // Test-hermeticiteit: bestaat alléén onder Http::preventStrayRequests().
+            // Production-no-op; in tests faalt een ongefaket pad hard i.p.v. stil.
+            throw $e;
         } catch (Throwable $e) {
             Log::warning('find_municipality_stream failed', [
                 'municipality' => $municipalityName,

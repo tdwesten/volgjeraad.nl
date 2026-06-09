@@ -11,6 +11,7 @@ use App\Models\Meeting;
 use App\Models\Summary;
 use App\Support\PayloadHasher;
 use App\Support\PromptRepository;
+use Illuminate\Http\Client\StrayRequestException;
 use Illuminate\Support\Facades\Log;
 use Laravel\Ai\Enums\Lab;
 use Throwable;
@@ -184,6 +185,10 @@ class GenerateMeetingSummary
             $this->log->handle($meeting, 'summarize', 'success', "Samenvatting [{$level->value}] gegenereerd (confidence: {$summary->confidence}%)");
 
             return $summary;
+        } catch (StrayRequestException $e) {
+            // Test-hermeticiteit: bestaat alléén onder Http::preventStrayRequests().
+            // Production-no-op; in tests faalt een ongefaket AI-pad hard i.p.v. stil.
+            throw $e;
         } catch (Throwable $e) {
             Log::warning('meeting_summary failed', [
                 'meeting_id' => $meeting->id,
