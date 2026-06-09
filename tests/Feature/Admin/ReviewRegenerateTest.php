@@ -12,7 +12,6 @@ use App\Models\Summary;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
-use Inertia\Testing\AssertableInertia as Assert;
 
 uses(RefreshDatabase::class);
 
@@ -113,42 +112,12 @@ test('unauthenticated user is redirected from regenerate', function (): void {
         ->assertRedirect('/login');
 });
 
-test('review show passes processing logs to inertia', function (): void {
+test('the old review detail route redirects to the new admin meeting page', function (): void {
     $admin = User::factory()->create(['is_admin' => true]);
     $municipality = Municipality::factory()->create();
     $meeting = Meeting::factory()->create(['municipality_id' => $municipality->id]);
 
-    ProcessingLog::factory()->forMeeting($meeting)->create([
-        'step' => 'agenda',
-        'status' => 'success',
-        'message' => 'Agenda opgehaald',
-    ]);
-
-    $this->withoutVite()
-        ->actingAs($admin)
+    $this->actingAs($admin)
         ->get("/admin/review/{$meeting->id}")
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('admin/Review/Show')
-            ->has('logs', 1)
-            ->where('logs.0.step', 'agenda')
-            ->where('logs.0.status', 'success')
-        );
-});
-
-test('review show works without a newsletter when processing logs exist', function (): void {
-    $admin = User::factory()->create(['is_admin' => true]);
-    $municipality = Municipality::factory()->create();
-    $meeting = Meeting::factory()->create(['municipality_id' => $municipality->id]);
-
-    ProcessingLog::factory()->forMeeting($meeting)->create(['step' => 'regenerate', 'status' => 'info', 'message' => 'Handmatig opnieuw verwerken gestart']);
-
-    $this->withoutVite()
-        ->actingAs($admin)
-        ->get("/admin/review/{$meeting->id}")
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->where('newsletter', null)
-            ->has('logs', 1)
-        );
+        ->assertRedirect(route('admin.municipalities.meetings.show', [$municipality, $meeting]));
 });

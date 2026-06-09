@@ -2,6 +2,7 @@
 
 // Item 11/12 — publiek
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\MeetingController as AdminMeetingController;
 use App\Http\Controllers\Admin\MunicipalityOverviewController;
 use App\Http\Controllers\Admin\MunicipalityRequestController as AdminMunicipalityRequestController;
 use App\Http\Controllers\Admin\ReviewController;
@@ -42,6 +43,7 @@ Route::middleware(['auth', 'is_admin'])->prefix('admin')->name('admin.')->group(
     Route::get('/municipalities/{municipality}', [MunicipalityOverviewController::class, 'show'])->name('municipalities.show');
     Route::patch('/municipalities/{municipality}/active', [MunicipalityOverviewController::class, 'toggleActive'])->name('municipalities.toggle-active');
     Route::post('/municipalities/{municipality}/channel', [MunicipalityOverviewController::class, 'updateChannel'])->name('municipalities.channel');
+    Route::get('/municipalities/{municipality}/meetings/{meeting}', [AdminMeetingController::class, 'show'])->name('municipalities.meetings.show');
     Route::post('/municipalities/{municipality}/meetings/{meeting}/process', [MunicipalityOverviewController::class, 'processMeeting'])->name('municipalities.process-meeting');
     Route::get('/gemeente-aanvragen', [AdminMunicipalityRequestController::class, 'index'])->name('municipality-requests.index');
 });

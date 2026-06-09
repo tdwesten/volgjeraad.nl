@@ -5,11 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Actions\Meetings\RegenerateMeeting;
 use App\Actions\Newsletters\PublishMeetingSummaries;
 use App\Enums\NewsletterStatus;
-use App\Enums\VideoStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Meeting;
 use App\Models\Newsletter;
-use App\Models\ProcessingLog;
 use App\Models\Summary;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -46,59 +44,10 @@ class ReviewController extends Controller
         ]);
     }
 
-    public function show(Meeting $meeting): Response
+    public function show(Meeting $meeting): RedirectResponse
     {
-        $meeting->load(['municipality', 'newsletter.summaries', 'video']);
-
-        $newsletter = $meeting->newsletter;
-
-        $std = $newsletter?->summaries->firstWhere('level', 'standard');
-        $sim = $newsletter?->summaries->firstWhere('level', 'simple');
-
-        $toArray = fn (?Summary $s): ?array => $s ? [
-            'id' => $s->id,
-            'title' => $s->title,
-            'body' => $s->body,
-            'confidence' => $s->confidence,
-        ] : null;
-
-        $logs = $meeting->processingLogs()
-            ->latest()
-            ->limit(50)
-            ->get()
-            ->map(fn (ProcessingLog $log) => [
-                'id' => $log->id,
-                'step' => $log->step,
-                'status' => $log->status,
-                'message' => $log->message,
-                'created_at' => $log->created_at->toIso8601String(),
-            ])
-            ->all();
-
-        $video = $meeting->video;
-        $videoUrl = ($video
-            && in_array($video->status, [VideoStatus::Matched, VideoStatus::Transcribed], true)
-            && $video->video_url !== null)
-            ? $video->video_url
-            : null;
-
-        return Inertia::render('admin/Review/Show', [
-            'meeting' => [
-                'id' => $meeting->id,
-                'name' => $meeting->name,
-                'starts_at' => $meeting->starts_at?->toIso8601String(),
-                'municipality' => $meeting->municipality->only('id', 'name', 'slug'),
-            ],
-            'video_url' => $videoUrl,
-            'newsletter' => $newsletter ? [
-                'id' => $newsletter->id,
-                'subject' => $newsletter->subject,
-                'status' => $newsletter->status->value,
-            ] : null,
-            'standardSummary' => $toArray($std),
-            'simpleSummary' => $toArray($sim),
-            'logs' => $logs,
-        ]);
+        // De review-detail is vervangen door de beheer-meetingpagina onder de gemeente.
+        return redirect()->route('admin.municipalities.meetings.show', [$meeting->municipality_id, $meeting]);
     }
 
     public function update(Request $request, Summary $summary): RedirectResponse
