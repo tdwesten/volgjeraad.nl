@@ -68,6 +68,20 @@ class IngestAgendaMediaObjects
             return;
         }
 
+        // De documentenset is nu compleet. Reset de notule-recheck-staat zodat de
+        // resolver VERS detecteert op de volledige set — ook als de meeting eerder
+        // (op nog-incomplete media, vóórdat de notule binnen was) op no_source belandde
+        // of de detectie throttled was. Zo wordt een laat binnengekomen besluitenlijst
+        // alsnog opgepikt.
+        if ($meeting->summarized_at === null
+            && ($meeting->notule_checked_at !== null || $meeting->summary_skipped_reason !== null)) {
+            $meeting->update([
+                'notule_checked_at' => null,
+                'summary_skipped_reason' => null,
+            ]);
+            $meeting->refresh();
+        }
+
         $this->log->handle($meeting, 'media', 'success', 'Alle bijlagen opgehaald, samenvattingspijplijn gestart');
 
         $this->resolveSources->handle($meeting);
