@@ -15,7 +15,13 @@ class IngestMeetingAgenda
 {
     public function __construct(private OriClient $client, private RecordProcessingEvent $log) {}
 
-    public function handle(Meeting $meeting): void
+    /**
+     * @param  bool  $forceMedia  Haal de bijlagen van ÁLLE agendapunten opnieuw op,
+     *                            niet alleen van gewijzigde — gebruikt bij handmatig
+     *                            herverwerken zodat ontbrekende/verdwenen documenten
+     *                            betrouwbaar terugkomen (in-place ververst, niet gewist).
+     */
+    public function handle(Meeting $meeting, bool $forceMedia = false): void
     {
         $source = $meeting->raw_payload ?? [];
         $agendaIds = OriNormalizer::meeting($meeting->ori_id, $source)['agenda_ids'];
@@ -32,6 +38,7 @@ class IngestMeetingAgenda
         // This ensures pendingCount is based on the full set, not a partial set,
         // preventing dispatchSummarizeIfComplete from firing prematurely.
         $changedIds = [];
+        $allIds = [];
         foreach ($sources as $oriId => $itemSource) {
             $hash = PayloadHasher::hash($itemSource);
             $normalized = OriNormalizer::agendaItem($oriId, $itemSource);
@@ -53,16 +60,20 @@ class IngestMeetingAgenda
                 ],
             );
 
+            $item = AgendaItem::where('meeting_id', $meeting->id)
+                ->where('ori_id', $oriId)
+                ->first();
+            $allIds[$oriId] = $item->id;
+
             if ($changed) {
-                $item = AgendaItem::where('meeting_id', $meeting->id)
-                    ->where('ori_id', $oriId)
-                    ->first();
                 $changedIds[$oriId] = $item->id;
             }
         }
 
         // Pass 2: dispatch media object jobs now that all items are in the DB.
-        foreach ($changedIds as $oriId => $itemId) {
+        // Bij forceMedia halen we de bijlagen van álle items opnieuw op.
+        $dispatchIds = $forceMedia ? $allIds : $changedIds;
+        foreach ($dispatchIds as $oriId => $itemId) {
             try {
                 dispatch(new IngestAgendaMediaObjectsJob($itemId));
             } catch (\Throwable $e) {

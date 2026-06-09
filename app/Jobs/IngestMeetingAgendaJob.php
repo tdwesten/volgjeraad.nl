@@ -17,14 +17,14 @@ class IngestMeetingAgendaJob implements ShouldQueue
 
     public int $tries = 3;
 
-    public function __construct(public int $meetingId) {}
+    public function __construct(public int $meetingId, public bool $forceMedia = false) {}
 
     public function handle(IngestMeetingAgenda $action): void
     {
-        Log::info('IngestMeetingAgendaJob gestart', ['meeting_id' => $this->meetingId]);
+        Log::info('IngestMeetingAgendaJob gestart', ['meeting_id' => $this->meetingId, 'force_media' => $this->forceMedia]);
 
         $meeting = Meeting::findOrFail($this->meetingId);
-        $action->handle($meeting);
+        $action->handle($meeting, $this->forceMedia);
 
         Log::info('IngestMeetingAgendaJob klaar', ['meeting_id' => $this->meetingId]);
     }

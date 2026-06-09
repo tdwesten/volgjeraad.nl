@@ -95,6 +95,33 @@ test('dispatches media objects job only for changed items on re-run', function (
     Bus::assertNotDispatched(IngestAgendaMediaObjectsJob::class);
 });
 
+test('forceMedia re-dispatches media jobs for unchanged items too', function (): void {
+    Bus::fake();
+
+    $municipality = Municipality::factory()->create();
+    $meeting = meetingWithAgendaList($municipality, ['agenda-item-1']);
+
+    $source = agendaItemSource('att-1');
+    $hash = PayloadHasher::hash($source);
+
+    // Pre-existing item with same hash (unchanged) — zou normaal NIET re-dispatchen.
+    AgendaItem::factory()->create([
+        'meeting_id' => $meeting->id,
+        'ori_id' => 'agenda-item-1',
+        'raw_payload' => $source,
+        'raw_payload_hash' => $hash,
+    ]);
+
+    $client = Mockery::mock(OriClient::class);
+    $client->shouldReceive('fetchByIds')->once()->andReturn(['agenda-item-1' => $source]);
+
+    $action = new IngestMeetingAgenda($client, app(RecordProcessingEvent::class));
+    $action->handle($meeting, forceMedia: true);
+
+    expect(AgendaItem::count())->toBe(1);
+    Bus::assertDispatchedTimes(IngestAgendaMediaObjectsJob::class, 1);
+});
+
 test('empty @list marks agenda_ingested_at without fetching', function (): void {
     Bus::fake();
 

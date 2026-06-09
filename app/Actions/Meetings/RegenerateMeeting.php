@@ -36,16 +36,16 @@ class RegenerateMeeting
             'notule_media_object_id' => null,
         ]);
 
-        // Verwijder de agendapunten (cascade verwijdert media_objects) zodat
-        // IngestMeetingAgenda ze vers opnieuw ophaalt, de media opnieuw fetcht
-        // en de samenvatting opnieuw laat genereren.
-        $meeting->agendaItems()->delete();
-
+        // NIET-destructief: agendapunten en media blijven staan en worden in-place
+        // ververst. De queue is async, dus zou verwijderen-en-opnieuw-ophalen de
+        // documenten laten verdwijnen tot de her-ingest klaar is. Met forceMedia
+        // worden de bijlagen van álle agendapunten opnieuw opgehaald (updateOrCreate),
+        // zodat ook eerder ontbrekende documenten betrouwbaar terugkomen.
         $this->log->handle($meeting, 'regenerate', 'info', 'Handmatig opnieuw verwerken gestart');
 
         // Trap zowel de agenda-ingest (PDF-bronnen) als de video-pipeline meteen aan,
-        // zodat verwerking direct begint i.p.v. te wachten op de dagelijkse video-match.
-        IngestMeetingAgendaJob::dispatch($meeting->id);
+        // zodat verwerking direct begint i.p.v. te wachten op de 15-min-sweep.
+        IngestMeetingAgendaJob::dispatch($meeting->id, forceMedia: true);
         ProcessMeetingVideoJob::dispatch($meeting->id);
     }
 }

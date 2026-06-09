@@ -34,8 +34,8 @@ test('admin can regenerate a meeting and summaries are deleted', function (): vo
         'meeting_id' => $meeting->id,
     ]);
 
-    // Agendapunt + media: regenerate moet deze verwijderen (cascade), niet
-    // de NOT NULL raw_payload_hash op null zetten.
+    // Agendapunt + media blijven bestaan: regenerate is NIET-destructief (async queue
+    // → niet wissen, anders verdwijnen de documenten tot de her-ingest klaar is).
     $agendaItem = AgendaItem::factory()->create(['meeting_id' => $meeting->id]);
     MediaObject::factory()->create(['agenda_item_id' => $agendaItem->id]);
 
@@ -45,13 +45,15 @@ test('admin can regenerate a meeting and summaries are deleted', function (): vo
         ->assertSessionHas('success', 'Vergadering wordt opnieuw verwerkt.');
 
     expect($meeting->fresh()->summaries()->count())->toBe(0);
-    expect($meeting->fresh()->agendaItems()->count())->toBe(0);
-    expect(MediaObject::where('agenda_item_id', $agendaItem->id)->exists())->toBeFalse();
+    // Documenten blijven behouden (niet gewist), worden door de her-ingest ververst.
+    expect($meeting->fresh()->agendaItems()->count())->toBe(1);
+    expect(MediaObject::where('agenda_item_id', $agendaItem->id)->exists())->toBeTrue();
     expect(Newsletter::where('meeting_id', $meeting->id)->exists())->toBeFalse();
     expect($meeting->fresh()->summarized_at)->toBeNull();
     expect($meeting->fresh()->agenda_ingested_at)->toBeNull();
 
-    Bus::assertDispatched(IngestMeetingAgendaJob::class, fn ($job) => $job->meetingId === $meeting->id);
+    // De her-ingest forceert het opnieuw ophalen van álle bijlagen.
+    Bus::assertDispatched(IngestMeetingAgendaJob::class, fn ($job) => $job->meetingId === $meeting->id && $job->forceMedia === true);
 });
 
 test('regenerate resets the source-resolution fields', function (): void {
