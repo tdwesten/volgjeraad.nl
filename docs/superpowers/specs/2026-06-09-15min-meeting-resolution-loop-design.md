@@ -138,10 +138,54 @@ Migratie op `meetings`:
 | Bestaand `ProcessMeetingVideoJob` / `FindMeetingVideo` / `FetchMeetingTranscript` | hergebruikt voor het transcript-pad |
 | Bestaand `DispatchMeetingSummariesIfReady` / `SummarizeMeetingJob` | hergebruikt voor het genereren van samenvattingen; `transcriptResolved()` wordt vervangen/aangevuld door de nieuwe bron-logica |
 | Migratie | nieuwe `meetings`-kolommen |
+| `MeetingProcessingStatus` (enum) + `Meeting::processingStatus()` | afgeleide status met `adminLabel()` / `publicMessage()` |
+| Beheer-lijsten (dashboard, `Municipalities/Show`, review) | statusbadge/-kolom tonen |
+| `MunicipalityController` / `MeetingController` + React-pagina's | publieke status-regel + verruimde lijst-query |
 
 `Meeting::transcriptResolved()` en de gate `DispatchMeetingSummariesIfReady` worden herzien
 zodat de bron-eis (transcript óf notule) de plaats inneemt van de oude
 `transcript_wait_days`-logica. De media-compleet-conditie blijft.
+
+## Status & UI
+
+De verwerkingsstatus wordt **afgeleid** uit de meeting-toestand (geen aparte opgeslagen
+status-kolom), één keer berekend en op twee manieren getoond: gedetailleerd in beheer,
+vriendelijk/beknopt publiek.
+
+### `MeetingProcessingStatus` (enum)
+
+| Case | Conditie (afgeleid) | Beheer-label | Publiek (één regel) |
+|---|---|---|---|
+| `PreLaunch` | `ingest_mode != Summarize` én `starts_at < municipality.launch_date` | "Voor livegang — niet samengevat" | "Deze vergadering vond plaats vóór de livegang en is niet samengevat." |
+| `Scheduled` | `now < starts_at` (summarizable) | "Gepland" | *verborgen in lijst* |
+| `AwaitingVideo` | raad+kanaal én `now < starts_at + video_wait_hours` | "In afwachting van video — verwerking vanaf {tijd}" | "Wordt verwerkt zodra de video beschikbaar is." |
+| `Processing` | bron-resolutie actief (videozoektocht/transcript loopt, of media compleet en notule-detectie) | "Bezig met verwerken" | "Bezig met verwerken." |
+| `AwaitingNotule` | geen bron, media (nog) niet compleet of binnen recheck-venster | "In afwachting van notule (recheck {werkdag})" | "Wachten op de besluitenlijst." |
+| `InReview` | `summarized_at != null`, geen gepubliceerde samenvatting | "In review" | "Bezig met verwerken." |
+| `Published` | minstens één gepubliceerde samenvatting | "Gepubliceerd" | *toont de samenvatting* |
+| `NoSource` | `summary_skipped_reason == 'no_source'` | "Geen bron — geen samenvatting" | "Geen samenvatting: er is geen besluitenlijst beschikbaar." |
+
+Implementatie als methode `Meeting::processingStatus(): MeetingProcessingStatus` (precedent:
+`summaryStatusLabel()`). De enum draagt `adminLabel()` en `publicMessage()`. Voor
+beheer-labels met een tijdstip (`AwaitingVideo` → `starts_at + video_wait_hours`,
+`AwaitingNotule` → eerstvolgende werkdag-recheck) levert de meeting de bijbehorende
+`Carbon` mee; **publiek tonen we geen interne timestamps**.
+
+### Beheer-UI
+
+Toon de afgeleide status (incl. tijdstip waar van toepassing) overal waar meetings worden
+gelijst: admin-dashboard, `admin/Municipalities/Show`, en de review-lijst. Geen nieuwe
+pagina's; statuskolom/-badge toevoegen aan bestaande lijsten.
+
+### Publieke UI
+
+- **Gemeentepagina (lijst)** — `MunicipalityController::show` toont nu ook **plaatsgevonden**
+  meetings zonder gepubliceerde samenvatting, met hun `publicMessage()`. Query verruimen van
+  "alleen gepubliceerd" naar "gepubliceerd **of** `starts_at <= now`". Toekomstige
+  (`Scheduled`) meetings blijven verborgen. Pre-launch meetings tonen de pre-launch-melding.
+- **Meetingpagina** — `MeetingController::show` geeft `processing_status` + `publicMessage`
+  mee; de React-pagina toont de regel wanneer er (nog) geen gepubliceerde samenvatting is.
+- Eén vriendelijke regel per status; geen interne details/timestamps publiek.
 
 ## Foutafhandeling
 
@@ -160,6 +204,10 @@ zodat de bron-eis (transcript óf notule) de plaats inneemt van de oude
 - `NotuleDetectionAgent` met een gemockte AI-respons (fake), inclusief de aanroep-gating
   (draait niet bij incomplete media; draait wel op rechecks).
 - Scheduler: `volgjeraad:resolve` geregistreerd, elke 15 min, `withoutOverlapping`.
+- `Meeting::processingStatus()` levert per toestand de juiste `MeetingProcessingStatus`
+  (alle 8 cases), inclusief de pre-launch- en `no_source`-takken.
+- Publieke gemeentepagina toont plaatsgevonden meetings zonder samenvatting met de juiste
+  `publicMessage()`; toekomstige meetings blijven verborgen.
 
 ## Buiten scope
 
