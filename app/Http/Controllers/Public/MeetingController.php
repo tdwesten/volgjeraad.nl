@@ -21,6 +21,8 @@ class MeetingController extends Controller
             'video',
         ]);
 
+        $meeting->loadMissing('municipality');
+
         $summariesByLevel = $meeting->summaries->keyBy(fn ($s) => $s->level->value);
 
         $video = $meeting->video;
@@ -39,6 +41,8 @@ class MeetingController extends Controller
                 'id' => $meeting->id,
                 'name' => $meeting->name,
                 'starts_at' => $meeting->starts_at?->toIso8601String(),
+                'processing_status' => $meeting->processingStatus()->value,
+                'status_message' => $meeting->processingStatus()->publicMessage(),
                 'standard_summary' => ($s = $summariesByLevel->get('standard')) ? [
                     'id' => $s->id,
                     'title' => $s->title,
