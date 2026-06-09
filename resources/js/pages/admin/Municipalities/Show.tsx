@@ -28,6 +28,8 @@ interface MeetingItem {
     starts_at: string | null;
     ingest_mode: 'summarize' | 'metadata_only';
     summary_status: string;
+    processing_status: string;
+    processing_label: string;
     is_summarizable: boolean;
     teaser: string | null;
 }
@@ -272,7 +274,16 @@ export default function MunicipalitiesShow({ municipality, ori_status, meetings 
                             {meetings.map((meeting) => (
                                 <TableRow key={meeting.id}>
                                     <TableCell className="max-w-md font-medium">
-                                        {meeting.name ?? <span className="text-muted-foreground italic">Naamloos</span>}
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <span>
+                                                {meeting.name ?? (
+                                                    <span className="text-muted-foreground italic">Naamloos</span>
+                                                )}
+                                            </span>
+                                            <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
+                                                {meeting.processing_label}
+                                            </span>
+                                        </div>
                                         {meeting.teaser && (
                                             <p className="mt-1 line-clamp-2 text-sm font-normal text-muted-foreground">
                                                 {meeting.teaser}
