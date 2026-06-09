@@ -16,6 +16,7 @@ return [
         'prompt_version' => 'v2',
         'cost_cap_cents_per_meeting' => 100,
         'confidence_highlight_threshold' => 60,
+        'notule_confidence_threshold' => 70,
         // Max chars of agenda+PDF source text passed to the AI (≈24 000 chars ≈ 6000 tokens).
         // Verhoogd t.o.v. v1 omdat we nu alle stukken als één geheel meesturen.
         'max_source_chars' => 80000,
