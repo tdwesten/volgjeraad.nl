@@ -42,6 +42,9 @@ return [
         // we 'm zonder transcript maken (apart van max_find_days). 'Wachten vóór review'.
         'video_wait_hours' => 24,
         'notule_recheck_working_days' => 2,
+        // Minimaal aantal uren tussen twee notule-rechecks (AI-call + agenda-redispatch),
+        // zodat de 15-min-sweep niet elke keer opnieuw de AI aanroept.
+        'notule_recheck_throttle_hours' => 20,
     ],
 
     'transcript' => [

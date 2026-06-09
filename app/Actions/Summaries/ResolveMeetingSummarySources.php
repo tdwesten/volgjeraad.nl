@@ -27,13 +27,20 @@ class ResolveMeetingSummarySources
             return;
         }
 
+        // Werkdag-deadline: hierna stoppen we met wachten op een (handmatig te
+        // bevestigen) video en valt de meeting onvermijdelijk naar no_source.
+        $deadline = $meeting->starts_at->copy()->addWeekdays(
+            (int) config('volgjeraad.youtube.notule_recheck_working_days'),
+        );
+        $beforeDeadline = now()->lessThan($deadline);
+
         $channelId = $meeting->municipality->settings['youtube_channel_id'] ?? null;
         $isCouncilWithChannel = $meeting->type === MeetingType::Council && $channelId !== null;
 
         // 1) Transcript-pad
         if ($isCouncilWithChannel) {
             if (now()->lessThan($meeting->videoReadyAt())) {
-                return; // video staat nog niet online
+                return; // video staat nog niet online (24u-venster blijft ongemoeid)
             }
 
             $video = $meeting->video;
@@ -43,22 +50,29 @@ class ResolveMeetingSummarySources
                 return;
             }
 
+            // Wacht op handmatige bevestiging — maar alléén tot de deadline, anders
+            // blijft de meeting eeuwig hangen als niemand bevestigt.
             if ($video?->status === VideoStatus::NeedsConfirmation) {
-                return; // wacht op handmatige bevestiging
+                if ($beforeDeadline) {
+                    return;
+                }
+                // deadline verstreken → stop met wachten, val door naar notule-pad
+            } else {
+                $maxAttempts = (int) config('volgjeraad.youtube.max_transcript_attempts');
+                $exhausted = $video !== null && (
+                    $video->status === VideoStatus::NotFound
+                    || ($video->status === VideoStatus::Failed && $video->transcript_attempts >= $maxAttempts)
+                );
+
+                // Video/transcript loopt nog: opnieuw proberen, maar alléén vóór de
+                // deadline; daarna geven we het video-pad op.
+                if (! $exhausted && $beforeDeadline) {
+                    ProcessMeetingVideoJob::dispatch($meeting->id);
+
+                    return; // opnieuw geëvalueerd na de job
+                }
+                // video uitgeput of deadline verstreken → notule-pad
             }
-
-            $maxAttempts = (int) config('volgjeraad.youtube.max_transcript_attempts');
-            $exhausted = $video !== null && (
-                $video->status === VideoStatus::NotFound
-                || ($video->status === VideoStatus::Failed && $video->transcript_attempts >= $maxAttempts)
-            );
-
-            if (! $exhausted) {
-                ProcessMeetingVideoJob::dispatch($meeting->id);
-
-                return; // video/transcript loopt; opnieuw geëvalueerd na de job
-            }
-            // video uitgeput → notule-pad
         }
 
         // 2) Notule-pad
@@ -68,7 +82,10 @@ class ResolveMeetingSummarySources
             return;
         }
 
-        if ($this->mediaComplete($meeting)) {
+        // Throttle: AI-detectie + agenda-redispatch hooguit eens per N uur draaien.
+        $due = $this->notuleCheckDue($meeting);
+
+        if ($due && $this->mediaComplete($meeting)) {
             $this->detectNotule->handle($meeting);
             $meeting->refresh();
             if ($meeting->notule_detected_at !== null) {
@@ -79,10 +96,6 @@ class ResolveMeetingSummarySources
         }
 
         // 3) Geen bron → begrensde werkdag-rechecks
-        $deadline = $meeting->starts_at->copy()->addWeekdays(
-            (int) config('volgjeraad.youtube.notule_recheck_working_days'),
-        );
-
         if (now()->greaterThanOrEqualTo($deadline)) {
             $meeting->update(['summary_skipped_reason' => Meeting::SKIP_NO_SOURCE]);
             $this->log->handle($meeting, 'resolve', 'warning', 'Geen bron (transcript/notule) — meeting zonder samenvatting vastgelegd');
@@ -90,8 +103,27 @@ class ResolveMeetingSummarySources
             return;
         }
 
-        // Notule kan later in ORI verschijnen → agenda opnieuw ophalen.
-        IngestMeetingAgendaJob::dispatch($meeting->id);
+        // Notule kan later in ORI verschijnen → agenda opnieuw ophalen, maar alleen
+        // wanneer de recheck 'due' is (anders elke 15-min-sweep opnieuw).
+        if ($due) {
+            IngestMeetingAgendaJob::dispatch($meeting->id);
+            // Markeer de recheck ook wanneer media nog niet compleet was (en
+            // DetectMeetingNotule dus niet draaide).
+            if ($meeting->notule_checked_at === null) {
+                $meeting->update(['notule_checked_at' => now()]);
+            }
+        }
+    }
+
+    private function notuleCheckDue(Meeting $meeting): bool
+    {
+        if ($meeting->notule_checked_at === null) {
+            return true;
+        }
+
+        $throttleHours = (int) config('volgjeraad.youtube.notule_recheck_throttle_hours');
+
+        return $meeting->notule_checked_at->lessThan(now()->subHours($throttleHours));
     }
 
     private function summarizeWith(Meeting $meeting, string $source): void

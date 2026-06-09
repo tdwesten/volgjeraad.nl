@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\Summaries\ResolveMeetingSummarySources;
+use App\Ai\Agents\NotuleDetectionAgent;
 use App\Enums\MeetingType;
 use App\Enums\SummaryLevel;
 use App\Enums\VideoStatus;
@@ -29,6 +30,7 @@ beforeEach(function (): void {
         'volgjeraad.youtube.video_wait_hours' => 24,
         'volgjeraad.youtube.notule_recheck_working_days' => 2,
         'volgjeraad.youtube.max_transcript_attempts' => 4,
+        'volgjeraad.youtube.notule_recheck_throttle_hours' => 20,
         'volgjeraad.ai.notule_confidence_threshold' => 70,
     ]);
 });
@@ -109,4 +111,50 @@ test('a future meeting is ignored', function (): void {
     $m = channelCouncilMeeting('+1 day');
     app(ResolveMeetingSummarySources::class)->handle($m);
     Bus::assertNothingDispatched();
+});
+
+test('council+channel needing confirmation past the deadline ends as no_source instead of hanging', function (): void {
+    Bus::fake();
+    NotuleDetectionAgent::fake([[
+        'is_notule_present' => false,
+        'media_object_id' => null,
+        'confidence' => 0,
+    ]]);
+
+    $m = channelCouncilMeeting('-10 days'); // ruim voorbij de werkdag-deadline
+    $m->video()->create(['status' => VideoStatus::NeedsConfirmation->value, 'transcript_attempts' => 0]);
+
+    app(ResolveMeetingSummarySources::class)->handle($m->fresh());
+
+    expect($m->fresh()->summary_skipped_reason)->toBe(Meeting::SKIP_NO_SOURCE);
+});
+
+test('a second sweep within the throttle window does not re-run the notule check', function (): void {
+    Bus::fake();
+    NotuleDetectionAgent::fake([[
+        'is_notule_present' => false,
+        'media_object_id' => null,
+        'confidence' => 0,
+    ]]);
+
+    // Raad zónder kanaal → direct notule-pad; -2 dagen valt vóór de deadline.
+    $muni = Municipality::factory()->create(['launch_date' => now()->subYear(), 'settings' => []]);
+    $m = Meeting::factory()->summarizable()->create([
+        'municipality_id' => $muni->id,
+        'type' => MeetingType::Council->value,
+        'starts_at' => now()->subDays(2),
+        'agenda_ingested_at' => now(),
+    ]);
+    $item = AgendaItem::factory()->create(['meeting_id' => $m->id, 'attachments_fetched_at' => now()]);
+    MediaObject::factory()->create(['agenda_item_id' => $item->id, 'name' => 'Stuk']);
+
+    app(ResolveMeetingSummarySources::class)->handle($m->fresh());
+    $firstCheck = $m->fresh()->notule_checked_at;
+    expect($firstCheck)->not->toBeNull();
+
+    // Eén uur later opnieuw → binnen de 20u-throttle: geen nieuwe check.
+    Carbon::setTestNow(now()->addHour());
+    app(ResolveMeetingSummarySources::class)->handle($m->fresh());
+
+    expect($m->fresh()->notule_checked_at->equalTo($firstCheck))->toBeTrue();
 });

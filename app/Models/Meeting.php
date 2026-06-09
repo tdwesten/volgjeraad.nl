@@ -45,6 +45,7 @@ class Meeting extends Model
             'summarized_at' => 'datetime',
             'source_resolved_at' => 'datetime',
             'notule_detected_at' => 'datetime',
+            'notule_checked_at' => 'datetime',
         ];
     }
 
