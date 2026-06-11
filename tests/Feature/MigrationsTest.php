@@ -1,11 +1,14 @@
 <?php
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 uses(RefreshDatabase::class);
 
 test('migrate fresh runs without errors', function (): void {
+    expect(Schema::hasTable('cache'))->toBeTrue();
+    expect(Schema::hasTable('cache_locks'))->toBeTrue();
     expect(Schema::hasTable('municipalities'))->toBeTrue();
     expect(Schema::hasTable('meetings'))->toBeTrue();
     expect(Schema::hasTable('agenda_items'))->toBeTrue();
@@ -45,4 +48,19 @@ test('summaries table has expected columns', function (): void {
 
 test('users table has is_admin column', function (): void {
     expect(Schema::hasColumn('users', 'is_admin'))->toBeTrue();
+});
+
+test('pending migrations restore missing database cache tables', function (): void {
+    Schema::dropIfExists('cache_locks');
+    Schema::dropIfExists('cache');
+
+    DB::table('migrations')
+        ->where('migration', '2026_06_11_084311_ensure_cache_tables_exist')
+        ->delete();
+
+    $this->artisan('migrate', ['--force' => true])
+        ->assertSuccessful();
+
+    expect(Schema::hasTable('cache'))->toBeTrue()
+        ->and(Schema::hasTable('cache_locks'))->toBeTrue();
 });
