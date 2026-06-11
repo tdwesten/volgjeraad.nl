@@ -22,13 +22,13 @@ test('an unfaked notule detection is blocked by the hermetic guard and fails har
 
 beforeEach(fn () => config(['volgjeraad.ai.notule_confidence_threshold' => 70]));
 
-function meetingWithDocs(): array
+function meetingWithDocs(string $name = 'Raadsvoorstel energiebesparing'): array
 {
     $meeting = Meeting::factory()->summarizable()->create(['agenda_ingested_at' => now()]);
     $item = AgendaItem::factory()->create(['meeting_id' => $meeting->id, 'attachments_fetched_at' => now()]);
     $media = MediaObject::factory()->create([
         'agenda_item_id' => $item->id,
-        'name' => 'Besluitenlijst 3 juni 2026',
+        'name' => $name,
     ]);
 
     return [$meeting->fresh(), $media];
@@ -40,6 +40,20 @@ test('stores the notule when the agent finds one above threshold', function (): 
         'is_notule_present' => true,
         'media_object_id' => $media->id,
         'confidence' => 88,
+    ]]);
+
+    app(DetectMeetingNotule::class)->handle($meeting);
+
+    expect($meeting->fresh()->notule_detected_at)->not->toBeNull();
+    expect($meeting->fresh()->notule_media_object_id)->toBe($media->id);
+});
+
+test('stores an explicit besluitenlijst document without relying on the agent', function (): void {
+    [$meeting, $media] = meetingWithDocs('Besluitenlijst 3 juni 2026');
+    NotuleDetectionAgent::fake([[
+        'is_notule_present' => false,
+        'media_object_id' => null,
+        'confidence' => 0,
     ]]);
 
     app(DetectMeetingNotule::class)->handle($meeting);

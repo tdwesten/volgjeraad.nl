@@ -24,14 +24,23 @@ class DetectMeetingNotule
 
         $docs = [];
         $validIds = [];
+        $mediaObjects = [];
         foreach ($meeting->agendaItems()->with('mediaObjects')->get() as $item) {
             foreach ($item->mediaObjects as $media) {
                 $docs[] = self::documentPayload($media);
                 $validIds[] = (int) $media->id;
+                $mediaObjects[] = $media;
             }
         }
 
         if ($docs === []) {
+            return;
+        }
+
+        $explicitNotule = $this->findExplicitNotule($mediaObjects);
+        if ($explicitNotule !== null) {
+            $this->storeDetectedNotule($meeting, (int) $explicitNotule->id, 100);
+
             return;
         }
 
@@ -81,7 +90,33 @@ class DetectMeetingNotule
             ? (int) $candidate
             : null;
 
+        $this->storeDetectedNotule($meeting, $mediaObjectId, $confidence);
+    }
+
+    /**
+     * @param  array<int, MediaObject>  $mediaObjects
+     */
+    private function findExplicitNotule(array $mediaObjects): ?MediaObject
+    {
+        foreach ($mediaObjects as $media) {
+            $haystack = mb_strtolower(($media->name ?? '').' '.($media->file_name ?? ''));
+
+            if (str_contains($haystack, 'besluitenlijst')
+                || str_contains($haystack, 'notulen')
+                || str_contains($haystack, 'notule')
+                || str_contains($haystack, 'conceptverslag')
+                || str_contains($haystack, 'concept verslag')) {
+                return $media;
+            }
+        }
+
+        return null;
+    }
+
+    private function storeDetectedNotule(Meeting $meeting, ?int $mediaObjectId, int $confidence): void
+    {
         $meeting->update([
+            'notule_checked_at' => now(),
             'notule_detected_at' => now(),
             'notule_media_object_id' => $mediaObjectId,
         ]);
