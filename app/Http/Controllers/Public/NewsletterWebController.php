@@ -17,6 +17,7 @@ class NewsletterWebController extends Controller
         ]);
 
         return Inertia::render('Newsletter/Web', [
+            'pageTitle' => $newsletter->subject,
             'newsletter' => [
                 'id' => $newsletter->id,
                 'subject' => $newsletter->subject,

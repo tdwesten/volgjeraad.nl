@@ -9,6 +9,7 @@ export interface PageProps {
     auth: {
         user: User | null;
     };
+    pageTitle: string | null;
     flash: {
         success: string | null;
         error: string | null;

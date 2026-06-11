@@ -46,13 +46,16 @@ class MunicipalityOverviewController extends Controller
             ]);
 
         return Inertia::render('admin/Municipalities/Index', [
+            'pageTitle' => 'Gemeenten',
             'municipalities' => $municipalities,
         ]);
     }
 
     public function create(): Response
     {
-        return Inertia::render('admin/Municipalities/Create');
+        return Inertia::render('admin/Municipalities/Create', [
+            'pageTitle' => 'Gemeente toevoegen',
+        ]);
     }
 
     public function store(StoreMunicipalityRequest $request): RedirectResponse
@@ -105,6 +108,7 @@ class MunicipalityOverviewController extends Controller
         );
 
         return Inertia::render('admin/Municipalities/Show', [
+            'pageTitle' => $municipality->name,
             'municipality' => [
                 'id' => $municipality->id,
                 'name' => $municipality->name,

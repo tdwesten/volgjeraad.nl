@@ -29,6 +29,7 @@ class SubscriberController extends Controller
             ]);
 
         return Inertia::render('admin/Subscribers/Index', [
+            'pageTitle' => 'Abonnees',
             'subscribers' => $subscribers,
         ]);
     }

@@ -21,6 +21,7 @@ class MunicipalityRequestController extends Controller
             ]);
 
         return Inertia::render('admin/MunicipalityRequests/Index', [
+            'pageTitle' => 'Gemeente-aanvragen',
             'requests' => $requests,
         ]);
     }

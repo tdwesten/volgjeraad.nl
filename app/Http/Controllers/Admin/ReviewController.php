@@ -40,6 +40,7 @@ class ReviewController extends Controller
             });
 
         return Inertia::render('admin/Review/Index', [
+            'pageTitle' => 'Review',
             'newsletters' => $newsletters,
         ]);
     }

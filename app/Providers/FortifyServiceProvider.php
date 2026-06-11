@@ -28,12 +28,17 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::updateUserPasswordsUsing(UpdateUserPassword::class);
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
 
-        Fortify::loginView(fn () => Inertia::render('auth/Login'));
+        Fortify::loginView(fn () => Inertia::render('auth/Login', [
+            'pageTitle' => 'Inloggen',
+        ]));
 
-        Fortify::requestPasswordResetLinkView(fn () => Inertia::render('auth/ForgotPassword'));
+        Fortify::requestPasswordResetLinkView(fn () => Inertia::render('auth/ForgotPassword', [
+            'pageTitle' => 'Wachtwoord vergeten',
+        ]));
 
         Fortify::resetPasswordView(
             fn (Request $request) => Inertia::render('auth/ResetPassword', [
+                'pageTitle' => 'Wachtwoord opnieuw instellen',
                 'token' => $request->route('token'),
                 'email' => $request->email,
             ])

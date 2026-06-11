@@ -36,6 +36,7 @@ class MeetingController extends Controller
             : null;
 
         return Inertia::render('Meeting/Show', [
+            'pageTitle' => "{$meeting->name} - {$municipality->name}",
             'municipality' => $municipality->only('id', 'slug', 'name'),
             'meeting' => [
                 'id' => $meeting->id,

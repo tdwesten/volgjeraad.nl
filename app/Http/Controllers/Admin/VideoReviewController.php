@@ -34,6 +34,7 @@ class VideoReviewController extends Controller
             ]);
 
         return Inertia::render('admin/Videos/Index', [
+            'pageTitle' => 'Video’s beoordelen',
             'videos' => $videos,
         ]);
     }

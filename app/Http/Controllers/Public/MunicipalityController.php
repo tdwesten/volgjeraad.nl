@@ -26,6 +26,7 @@ class MunicipalityController extends Controller
             ->values();
 
         return Inertia::render('Municipality/Show', [
+            'pageTitle' => $municipality->name,
             'municipality' => $municipality->only('id', 'slug', 'name'),
             'meetings' => $meetings->map(fn (Meeting $meeting) => [
                 'id' => $meeting->id,
@@ -50,6 +51,7 @@ class MunicipalityController extends Controller
             ->get(['id', 'name', 'starts_at', 'type', 'ingest_mode']);
 
         return Inertia::render('Municipality/Archive', [
+            'pageTitle' => "Archief {$municipality->name}",
             'municipality' => $municipality->only('id', 'slug', 'name'),
             'meetings' => $meetings->map(fn ($meeting) => [
                 'id' => $meeting->id,

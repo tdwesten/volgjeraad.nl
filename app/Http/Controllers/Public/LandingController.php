@@ -19,6 +19,7 @@ class LandingController extends Controller
             ->get(['id', 'slug', 'name']);
 
         return Inertia::render('Landing', [
+            'pageTitle' => null,
             'municipalities' => $municipalities,
             'featuredMeeting' => $this->featuredMeeting(),
         ]);

@@ -77,6 +77,7 @@ class MeetingController extends Controller
         $newsletter = $meeting->newsletter;
 
         return Inertia::render('admin/Meetings/Show', [
+            'pageTitle' => "{$meeting->name} - {$municipality->name}",
             'meeting' => [
                 'id' => $meeting->id,
                 'name' => $meeting->name,

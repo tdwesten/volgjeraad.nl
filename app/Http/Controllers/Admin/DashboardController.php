@@ -17,6 +17,7 @@ class DashboardController extends Controller
     public function index(): Response
     {
         return Inertia::render('admin/Dashboard', [
+            'pageTitle' => 'Dashboard',
             'totalCostCents' => AiUsageRecord::sum('cost_cents'),
             'totalAiCalls' => AiUsageRecord::count(),
             'newslettersSent' => Newsletter::where('status', NewsletterStatus::Sent)->count(),
