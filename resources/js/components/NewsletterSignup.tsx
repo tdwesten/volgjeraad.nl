@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useForm } from '@inertiajs/react';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, Mail } from 'lucide-react';
 import { type FormEvent } from 'react';
 
 export default function NewsletterSignup({
@@ -58,8 +58,9 @@ export default function NewsletterSignup({
                     {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                 </div>
                 {generalError && <p className="text-sm text-destructive">{generalError}</p>}
-                <Button type="submit" disabled={processing}>
-                    {processing ? 'Bezig…' : 'Aanmelden'}
+                <Button type="submit" disabled={processing} className="h-auto min-h-7 whitespace-normal">
+                    <Mail className="h-4 w-4" />
+                    {processing ? 'Bezig…' : 'Meld je aan om op de hoogte te blijven'}
                 </Button>
             </form>
         </div>

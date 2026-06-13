@@ -46,6 +46,35 @@ test('municipality show page renders with published summaries', function (): voi
         );
 });
 
+test('municipality show page explains volg je raad and ai usage before signup', function (): void {
+    $municipalityPage = file_get_contents(resource_path('js/pages/Municipality/Show.tsx'));
+    $landingPage = file_get_contents(resource_path('js/pages/Landing.tsx'));
+    $signupComponent = file_get_contents(resource_path('js/components/NewsletterSignup.tsx'));
+    $aiBlock = file_get_contents(resource_path('js/components/AiTransparencyPanel.tsx'));
+    $page = collect([$municipalityPage, $signupComponent, $aiBlock])->implode("\n");
+
+    $page = preg_replace('/\s+/', ' ', $page);
+
+    expect($page)
+        ->toContain('Na elke raadsvergadering')
+        ->toContain('We gebruiken AI om dit te maken')
+        ->toContain('AI kan fouten maken')
+        ->toContain('Meld je aan om op de hoogte te blijven');
+
+    expect($landingPage)->toContain('<AiTransparencyPanel />');
+    expect($municipalityPage)->toContain('<AiTransparencyPanel />');
+
+    $explanationPosition = strpos($municipalityPage, 'Na elke raadsvergadering');
+    $aiBlockPosition = strpos($municipalityPage, '<AiTransparencyPanel />');
+    $signupPosition = strpos($municipalityPage, '<NewsletterSignup');
+
+    expect($explanationPosition)->toBeInt();
+    expect($aiBlockPosition)->toBeInt();
+    expect($signupPosition)->toBeInt();
+    expect($explanationPosition)->toBeLessThan($signupPosition);
+    expect($aiBlockPosition)->toBeLessThan($signupPosition);
+});
+
 test('draft summaries do not leak on municipality show page', function (): void {
     $municipality = Municipality::factory()->create();
     // Expliciete starts_at in het verleden zodat de meeting deterministisch in de

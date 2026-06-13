@@ -150,10 +150,6 @@ export default function MeetingShow({ municipality, meeting, agendaItems, video 
                                         daar een samenvatting van: een <strong>standaard</strong> versie en een{' '}
                                         <strong>eenvoudige (B1)</strong> versie in begrijpelijke taal.
                                     </li>
-                                    <li>
-                                        <strong>Controle door een mens.</strong> Een redacteur leest het concept na, kan het aanpassen
-                                        en keurt het pas daarna goed. Wat je hier leest, is dus door een mens gecontroleerd.
-                                    </li>
                                 </ol>
                                 <p>De tools die we hiervoor gebruiken:</p>
                                 <ul className="list-disc space-y-1.5 pl-5">

@@ -1,6 +1,6 @@
 <x-mail::message>
 <x-mail::panel>
-Automatisch samengevat door AI. Controleer altijd de bronnen voor officiële informatie.
+**Beta** — Volg je raad is nog in ontwikkeling. Automatisch samengevat door AI; controleer altijd de bronnen voor officiële informatie.
 </x-mail::panel>
 
 [Bekijk deze e-mail in je browser →]({{ $webUrl }})
@@ -29,4 +29,8 @@ Hieronder lees je de samenvatting van de laatste raadsvergadering van **{{ $muni
 *Controleer voor beslissingen altijd de officiële bronnen.*
 
 [Uitschrijven]({{ $unsubscribeUrl }}) · [Naar gemeente-pagina]({{ $municipalityUrl }})
+
+<x-mail::subcopy>
+Volg je raad is een beta: we zijn nog volop bezig met de ontwikkeling, dus functies en samenvattingen kunnen nog veranderen of fouten bevatten.
+</x-mail::subcopy>
 </x-mail::message>

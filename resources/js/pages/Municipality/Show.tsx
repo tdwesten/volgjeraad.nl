@@ -1,6 +1,7 @@
 import PublicLayout from '@/layouts/PublicLayout';
 import { Link, usePage } from '@inertiajs/react';
 import { type PageProps } from '@/types';
+import AiTransparencyPanel from '@/components/AiTransparencyPanel';
 import NewsletterSignup from '@/components/NewsletterSignup';
 
 interface Summary {
@@ -51,6 +52,18 @@ export default function MunicipalityShow({ municipality, meetings }: Props): JSX
                         {flash.success}
                     </div>
                 )}
+
+                <section className="space-y-2 rounded-lg border border-border bg-muted/40 p-6">
+                    <h2 className="text-xl font-semibold">Volg wat er speelt in {municipality.name}</h2>
+                    <p className="text-sm leading-6 text-muted-foreground">
+                        Na elke raadsvergadering maken we een heldere samenvatting van de belangrijkste onderwerpen,
+                        besluiten en discussies. Je hoeft geen lange vergaderingen terug te kijken of taaie stukken
+                        door te nemen: Volg je Raad zet de informatie overzichtelijk voor je klaar, met links naar de
+                        officiële bronnen.
+                    </p>
+                </section>
+
+                <AiTransparencyPanel />
 
                 <NewsletterSignup municipalitySlug={municipality.slug} municipalityName={municipality.name} />
 
